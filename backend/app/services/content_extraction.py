@@ -4,8 +4,14 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from groq import Groq
 from pypdf import PdfReader
 from youtube_transcript_api import YouTubeTranscriptApi
+
+from app.core.config import GROQ_API_KEY, GROQ_TRANSCRIPTION_MODEL
+
+
+groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 
 def extract_text_from_upload(
@@ -41,7 +47,7 @@ def extract_text_from_file(*, file_name: str, file_bytes: bytes) -> str:
         return file_bytes.decode("utf-8", errors="ignore").strip()
 
     if suffix in {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac"}:
-        return f"Audio file received: {file_name}. Transcription pipeline can be plugged in next."
+        return extract_text_from_audio(file_name=file_name, file_bytes=file_bytes)
 
     return file_bytes.decode("utf-8", errors="ignore").strip()
 
@@ -71,6 +77,18 @@ def extract_text_from_website(url: str) -> str:
 
     text = soup.get_text(separator=" ", strip=True)
     return " ".join(text.split()).strip()
+
+
+def extract_text_from_audio(*, file_name: str, file_bytes: bytes) -> str:
+    if groq_client is None:
+        return ""
+
+    transcription = groq_client.audio.transcriptions.create(
+        file=(file_name, file_bytes),
+        model=GROQ_TRANSCRIPTION_MODEL,
+        response_format="json",
+    )
+    return (transcription.text or "").strip()
 
 
 def get_youtube_video_id(url: str) -> str | None:
