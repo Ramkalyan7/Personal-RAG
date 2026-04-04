@@ -38,7 +38,7 @@ class ProjectBase(BaseModel):
 
 
 class ProjectCreate(ProjectBase):
-    owner_id: int
+    pass
 
 
 class ProjectRead(ProjectBase):
