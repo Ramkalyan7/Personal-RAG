@@ -4,10 +4,14 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.db.models import Project, User
 from app.db.schemas import ProjectCreate, ProjectRead
-from app.services.auth import get_current_user
+from app.services.auth import get_current_user, require_authenticated_user
 
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+router = APIRouter(
+    prefix="/projects",
+    tags=["projects"],
+    dependencies=[Depends(require_authenticated_user)],
+)
 
 
 @router.post("", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)

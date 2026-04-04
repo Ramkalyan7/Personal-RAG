@@ -83,3 +83,9 @@ def get_current_user(
             detail="User no longer exists",
         )
     return current_user
+
+
+def require_authenticated_user(
+    current_user: User = Depends(get_current_user),
+) -> None:
+    return None
