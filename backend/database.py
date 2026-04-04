@@ -1,7 +1,10 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = "postgresql://user:password@localhost:5432/mydb"
+
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Engine (connection manager)
 engine = create_engine(
