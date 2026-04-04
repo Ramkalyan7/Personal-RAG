@@ -1,0 +1,54 @@
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from sqlalchemy.orm import Session
+
+from app.db.database import get_db
+from app.db.models import Project, User
+from app.db.schemas import UploadDataResponse
+from app.services.auth import get_current_user, require_authenticated_user
+from app.services.content_extraction import extract_text_from_upload
+
+
+router = APIRouter(
+    prefix="/projects",
+    tags=["uploads"],
+    dependencies=[Depends(require_authenticated_user)],
+)
+
+
+@router.post("/{project_id}/upload-data", response_model=UploadDataResponse)
+async def upload_data(
+    project_id: int,
+    raw_text: str | None = Form(default=None),
+    youtube_url: str | None = Form(default=None),
+    website_url: str | None = Form(default=None),
+    file: UploadFile | None = File(default=None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    project = (
+        db.query(Project)
+        .filter(Project.id == project_id, Project.owner_id == current_user.id)
+        .first()
+    )
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    file_bytes = await file.read() if file is not None else None
+    extracted_text = extract_text_from_upload(
+        raw_text=raw_text,
+        file_name=file.filename if file is not None else None,
+        file_bytes=file_bytes,
+        youtube_url=youtube_url,
+        website_url=website_url,
+    )
+
+    if not extracted_text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to extract text from the provided input",
+        )
+
+    return UploadDataResponse(message="Data uploaded and text extracted successfully")

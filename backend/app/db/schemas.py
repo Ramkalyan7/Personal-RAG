@@ -65,3 +65,7 @@ class ConversationMessageRead(ConversationMessageBase):
     id: int
     project_id: int
     created_at: datetime
+
+
+class UploadDataResponse(BaseModel):
+    message: str
