@@ -69,3 +69,6 @@ class ConversationMessageRead(ConversationMessageBase):
 
 class UploadDataResponse(BaseModel):
     message: str
+    chunk_count: int
+    embedding_count: int
+    sparse_embedding_count: int

@@ -5,6 +5,8 @@ from app.db.database import get_db
 from app.db.models import Project, User
 from app.db.schemas import UploadDataResponse
 from app.services.auth import get_current_user, require_authenticated_user
+from app.services.chunking import chunk_text
+from app.services.embeddings import create_embeddings, create_sparse_embeddings
 from app.services.content_extraction import extract_text_from_upload
 
 
@@ -51,4 +53,30 @@ async def upload_data(
             detail="Unable to extract text from the provided input",
         )
 
-    return UploadDataResponse(message="Data uploaded and text extracted successfully")
+    chunks = chunk_text(extracted_text)
+    if not chunks:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to chunk extracted text",
+        )
+
+    embeddings = create_embeddings(chunks)
+    if not embeddings:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to generate embeddings from extracted chunks",
+        )
+
+    sparse_embeddings = create_sparse_embeddings(chunks)
+    if not sparse_embeddings:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to generate sparse embeddings from extracted chunks",
+        )
+
+    return UploadDataResponse(
+        message="Data uploaded, text extracted, chunked, and embedded successfully",
+        chunk_count=len(chunks),
+        embedding_count=len(embeddings),
+        sparse_embedding_count=len(sparse_embeddings),
+    )
