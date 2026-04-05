@@ -6,6 +6,7 @@ from app.api.routes.uploads import router as uploads_router
 from app.db.database import engine
 from app.db.models import Base
 from app.services.auth import AuthMiddleware
+from app.services.vector_store import ensure_pinecone_index_exists
 
 
 Base.metadata.create_all(bind=engine)
@@ -15,6 +16,11 @@ app.add_middleware(AuthMiddleware)
 app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(uploads_router)
+
+
+@app.on_event("startup")
+def on_startup():
+    ensure_pinecone_index_exists()
 
 
 @app.get("/")

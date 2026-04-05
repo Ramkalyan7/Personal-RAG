@@ -1,10 +1,33 @@
-from pinecone import Pinecone
+from pinecone import Pinecone, ServerlessSpec
 
-from app.core.config import PINECONE_API_KEY, PINECONE_INDEX_NAME
+from app.core.config import (
+    GOOGLE_EMBEDDING_DIMENSION,
+    PINECONE_API_KEY,
+    PINECONE_INDEX_NAME,
+)
 
 
 pinecone_client = Pinecone(api_key=PINECONE_API_KEY) if PINECONE_API_KEY else None
 pinecone_index = pinecone_client.Index(PINECONE_INDEX_NAME) if pinecone_client else None
+
+
+def ensure_pinecone_index_exists() -> None:
+    if pinecone_client is None:
+        return
+
+    if pinecone_client.has_index(PINECONE_INDEX_NAME):
+        return
+
+    pinecone_client.create_index(
+        name=PINECONE_INDEX_NAME,
+        vector_type="dense",
+        dimension=GOOGLE_EMBEDDING_DIMENSION,
+        metric="dotproduct",
+        spec=ServerlessSpec(
+            cloud="aws",
+            region="us-east-1",
+        ),
+    )
 
 
 def store_project_chunks(
