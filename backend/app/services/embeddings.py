@@ -43,13 +43,30 @@ def create_sparse_embeddings(text_chunks: list[str]) -> list[dict[str, list[floa
         parameters={"input_type": "passage", "truncate": "END"},
     )
 
-    return [
-        {
-            "indices": vector.get("sparse_values", {}).get("indices", []),
-            "values": vector.get("sparse_values", {}).get("values", []),
-        }
-        for vector in response.data
-    ]
+    sparse_vectors: list[dict[str, list[float] | list[int]]] = []
+    for vector in response.data:
+        sparse_values = getattr(vector, "sparse_values", None)
+        if sparse_values is None and isinstance(vector, dict):
+            sparse_values = vector.get("sparse_values", {})
+
+        if sparse_values is None:
+            sparse_values = {}
+
+        indices = getattr(sparse_values, "indices", None)
+        values = getattr(sparse_values, "values", None)
+        if indices is None and isinstance(sparse_values, dict):
+            indices = sparse_values.get("indices", [])
+        if values is None and isinstance(sparse_values, dict):
+            values = sparse_values.get("values", [])
+
+        sparse_vectors.append(
+            {
+                "indices": indices or [],
+                "values": values or [],
+            }
+        )
+
+    return sparse_vectors
 
 
 def normalize_embedding(values: list[float]) -> list[float]:

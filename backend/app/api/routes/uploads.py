@@ -8,6 +8,7 @@ from app.services.auth import get_current_user, require_authenticated_user
 from app.services.chunking import chunk_text
 from app.services.embeddings import create_embeddings, create_sparse_embeddings
 from app.services.content_extraction import extract_text_from_upload
+from app.services.vector_store import store_project_chunks
 
 
 router = APIRouter(
@@ -74,9 +75,22 @@ async def upload_data(
             detail="Unable to generate sparse embeddings from extracted chunks",
         )
 
+    stored_count = store_project_chunks(
+        project_id=project.id,
+        chunks=chunks,
+        dense_embeddings=embeddings,
+        sparse_embeddings=sparse_embeddings,
+    )
+    if stored_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to store chunk embeddings",
+        )
+
     return UploadDataResponse(
-        message="Data uploaded, text extracted, chunked, and embedded successfully",
+        message="Data uploaded, text extracted, chunked, embedded, and stored successfully",
         chunk_count=len(chunks),
         embedding_count=len(embeddings),
         sparse_embedding_count=len(sparse_embeddings),
+        stored_count=stored_count,
     )

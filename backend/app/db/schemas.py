@@ -72,3 +72,4 @@ class UploadDataResponse(BaseModel):
     chunk_count: int
     embedding_count: int
     sparse_embedding_count: int
+    stored_count: int
