@@ -4,6 +4,7 @@ from app.core.config import (
     GOOGLE_EMBEDDING_DIMENSION,
     PINECONE_API_KEY,
     PINECONE_INDEX_NAME,
+    PINECONE_TOP_K,
 )
 
 
@@ -68,6 +69,49 @@ def store_project_chunks(
 
     pinecone_index.upsert(vectors=records, namespace=namespace)
     return len(records)
+
+
+def query_project_chunks(
+    *,
+    project_id: int,
+    dense_vector: list[float],
+    sparse_vector: dict[str, list[float] | list[int]],
+    top_k: int | None = None,
+) -> list[dict]:
+    if pinecone_index is None or not dense_vector:
+        return []
+
+    response = pinecone_index.query(
+        namespace=build_project_namespace(project_id),
+        vector=dense_vector,
+        sparse_vector={
+            "indices": sparse_vector.get("indices", []),
+            "values": sparse_vector.get("values", []),
+        },
+        top_k=top_k or PINECONE_TOP_K,
+        include_metadata=True,
+    )
+
+    matches = getattr(response, "matches", None)
+    if matches is None and isinstance(response, dict):
+        matches = response.get("matches", [])
+
+    normalized_matches = []
+    for match in matches or []:
+        metadata = getattr(match, "metadata", None)
+        score = getattr(match, "score", None)
+        if isinstance(match, dict):
+            metadata = match.get("metadata", {})
+            score = match.get("score")
+
+        normalized_matches.append(
+            {
+                "score": score,
+                "metadata": metadata or {},
+            }
+        )
+
+    return normalized_matches
 
 
 def build_project_namespace(project_id: int) -> str:

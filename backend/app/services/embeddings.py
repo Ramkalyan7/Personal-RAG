@@ -18,6 +18,15 @@ pinecone_client = Pinecone(api_key=PINECONE_API_KEY) if PINECONE_API_KEY else No
 
 
 def create_embeddings(text_chunks: list[str]) -> list[list[float]]:
+    return create_dense_embeddings(text_chunks, task_type="RETRIEVAL_DOCUMENT")
+
+
+def create_query_embedding(query_text: str) -> list[float]:
+    embeddings = create_dense_embeddings([query_text], task_type="RETRIEVAL_QUERY")
+    return embeddings[0] if embeddings else []
+
+
+def create_dense_embeddings(text_chunks: list[str], *, task_type: str) -> list[list[float]]:
     if not text_chunks or google_client is None:
         return []
 
@@ -25,7 +34,7 @@ def create_embeddings(text_chunks: list[str]) -> list[list[float]]:
         model=GOOGLE_EMBEDDING_MODEL,
         contents=text_chunks,
         config=types.EmbedContentConfig(
-            task_type="RETRIEVAL_DOCUMENT",
+            task_type=task_type,
             output_dimensionality=GOOGLE_EMBEDDING_DIMENSION,
         ),
     )
@@ -34,13 +43,26 @@ def create_embeddings(text_chunks: list[str]) -> list[list[float]]:
 
 
 def create_sparse_embeddings(text_chunks: list[str]) -> list[dict[str, list[float] | list[int]]]:
+    return create_sparse_vectors(text_chunks, input_type="passage")
+
+
+def create_sparse_query_embedding(query_text: str) -> dict[str, list[float] | list[int]]:
+    sparse_vectors = create_sparse_vectors([query_text], input_type="query")
+    return sparse_vectors[0] if sparse_vectors else {"indices": [], "values": []}
+
+
+def create_sparse_vectors(
+    text_chunks: list[str],
+    *,
+    input_type: str,
+) -> list[dict[str, list[float] | list[int]]]:
     if not text_chunks or pinecone_client is None:
         return []
 
     response = pinecone_client.inference.embed(
         model=PINECONE_SPARSE_MODEL,
         inputs=text_chunks,
-        parameters={"input_type": "passage", "truncate": "END"},
+        parameters={"input_type": input_type, "truncate": "END"},
     )
 
     sparse_vectors: list[dict[str, list[float] | list[int]]] = []

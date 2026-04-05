@@ -73,3 +73,18 @@ class UploadDataResponse(BaseModel):
     embedding_count: int
     sparse_embedding_count: int
     stored_count: int
+
+
+class QueryRequest(BaseModel):
+    question: str = Field(min_length=1)
+
+
+class RetrievedChunk(BaseModel):
+    chunk_number: int | None = None
+    text: str
+    score: float | None = None
+
+
+class QueryResponse(BaseModel):
+    answer: str
+    retrieved_chunks: list[RetrievedChunk]
