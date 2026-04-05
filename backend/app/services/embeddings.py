@@ -76,8 +76,10 @@ def create_sparse_vectors(
 
         indices = getattr(sparse_values, "indices", None)
         values = getattr(sparse_values, "values", None)
+        
         if indices is None and isinstance(sparse_values, dict):
             indices = sparse_values.get("indices", [])
+            
         if values is None and isinstance(sparse_values, dict):
             values = sparse_values.get("values", [])
 
