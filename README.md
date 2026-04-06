@@ -8,3 +8,4 @@ RAG application where users can create projects, upload different kinds of data,
 2. Add reranking and compression after retrieval before sending context to the generation model.
 3. Generate an LLM-based summary for each chunk while storing data in the vector database.
 4. Use `unstructured.io` or another advanced PDF parser for complex PDF parsing.
+5. Add evaluations to measure retrieval quality and answer quality.
