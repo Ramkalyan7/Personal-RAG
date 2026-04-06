@@ -13,7 +13,7 @@ type Project = {
 };
 
 export function ProjectsPage() {
-  const { token, user } = useAuth();
+  const { token} = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,10 +56,9 @@ export function ProjectsPage() {
           <div>
             <p className="section-kicker">Workspace</p>
             <h1 className="display-face mt-3 text-[2.1rem] leading-none sm:text-[2.5rem]">Projects</h1>
-            <p className="mt-3 text-[0.96rem] muted-copy">{user?.email}</p>
           </div>
           <div
-            className="rounded-[1.5rem] border px-5 py-4 text-[0.72rem] uppercase tracking-[0.18em]"
+            className="rounded-3xl border px-5 py-4 text-[0.72rem] uppercase tracking-[0.18em]"
             style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-soft)" }}
           >
             {projects.length} project{projects.length === 1 ? "" : "s"}
