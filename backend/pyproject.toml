@@ -18,7 +18,6 @@ dependencies = [
     "python-jose[cryptography]>=3.5.0",
     "python-multipart>=0.0.20",
     "psycopg2-binary>=2.9.11",
-    "passlib[bcrypt]>=1.7.4",
     "requests>=2.32.4",
     "sqlalchemy>=2.0.48",
     "tiktoken>=0.11.0",
