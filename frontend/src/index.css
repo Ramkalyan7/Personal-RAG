@@ -253,6 +253,19 @@ textarea {
   text-transform: uppercase;
 }
 
+.create-project-btn {
+  background: #000000 !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+.create-project-btn:hover {
+  background: #0c0c0c !important;
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
 .primary-button {
   align-items: center;
   background: linear-gradient(

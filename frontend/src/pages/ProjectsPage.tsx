@@ -81,7 +81,7 @@ export function ProjectsPage() {
         <div className="flex flex-wrap items-center gap-3">
           <span className="tag">{projectCountLabel}</span>
           <button
-            className="primary-button"
+            className="primary-button create-project-btn"
             onClick={() => {
               setCreateError(null);
               setIsCreateOpen(true);
@@ -257,7 +257,7 @@ export function ProjectsPage() {
                     Cancel
                   </button>
                   <button
-                    className="primary-button"
+                    className="primary-button create-project-btn"
                     disabled={isCreating}
                     type="submit"
                   >

@@ -234,7 +234,7 @@ export function ChatPage() {
 
           <div className="mt-5">
             <button
-              className="primary-button w-full justify-center"
+              className="primary-button create-project-btn w-full justify-center"
               onClick={() => {
                 setCreateError(null);
                 setIsCreateOpen(true);
@@ -556,7 +556,7 @@ export function ChatPage() {
                     Cancel
                   </button>
                   <button
-                    className="primary-button"
+                    className="primary-button create-project-btn"
                     disabled={isCreating || !createName.trim()}
                     onClick={() => void handleCreateProject()}
                     type="button"
