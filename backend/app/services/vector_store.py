@@ -9,14 +9,29 @@ from app.core.config import (
 
 
 pinecone_client = Pinecone(api_key=PINECONE_API_KEY) if PINECONE_API_KEY else None
-pinecone_index = pinecone_client.Index(PINECONE_INDEX_NAME) if pinecone_client else None
+pinecone_index = None
+
+
+def get_pinecone_index():
+    global pinecone_index
+
+    if pinecone_client is None:
+        return None
+
+    if pinecone_index is None:
+        pinecone_index = pinecone_client.Index(PINECONE_INDEX_NAME)
+
+    return pinecone_index
 
 
 def ensure_pinecone_index_exists() -> None:
+    global pinecone_index
+
     if pinecone_client is None:
         return
 
     if pinecone_client.has_index(PINECONE_INDEX_NAME):
+        pinecone_index = pinecone_client.Index(PINECONE_INDEX_NAME)
         return
 
     pinecone_client.create_index(
@@ -29,6 +44,7 @@ def ensure_pinecone_index_exists() -> None:
             region="us-east-1",
         ),
     )
+    pinecone_index = pinecone_client.Index(PINECONE_INDEX_NAME)
 
 
 def store_project_chunks(
@@ -38,7 +54,8 @@ def store_project_chunks(
     dense_embeddings: list[list[float]],
     sparse_embeddings: list[dict[str, list[float] | list[int]]],
 ) -> int:
-    if pinecone_index is None:
+    index = get_pinecone_index()
+    if index is None:
         return 0
 
     records = []
@@ -67,7 +84,7 @@ def store_project_chunks(
     if not records:
         return 0
 
-    pinecone_index.upsert(vectors=records, namespace=namespace)
+    index.upsert(vectors=records, namespace=namespace)
     return len(records)
 
 
@@ -78,10 +95,11 @@ def query_project_chunks(
     sparse_vector: dict[str, list[float] | list[int]],
     top_k: int | None = None,
 ) -> list[dict]:
-    if pinecone_index is None or not dense_vector:
+    index = get_pinecone_index()
+    if index is None or not dense_vector:
         return []
 
-    response = pinecone_index.query(
+    response = index.query(
         namespace=build_project_namespace(project_id),
         vector=dense_vector,
         sparse_vector={
