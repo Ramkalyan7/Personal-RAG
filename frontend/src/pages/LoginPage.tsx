@@ -1,4 +1,5 @@
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../providers/AuthProvider";
@@ -23,9 +24,14 @@ export function LoginPage() {
 
     try {
       await login({ email, password });
-      navigate((location.state as { from?: string } | null)?.from ?? "/projects", { replace: true });
+      navigate(
+        (location.state as { from?: string } | null)?.from ?? "/projects",
+        { replace: true },
+      );
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unable to log in");
+      setError(
+        submitError instanceof Error ? submitError.message : "Unable to log in",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -37,7 +43,9 @@ export function LoginPage() {
         <section className="glass-panel rounded-[2.25rem] p-6 sm:p-8 lg:p-10">
           <div className="mb-8 space-y-3">
             <p className="section-kicker">Login</p>
-            <h1 className="display-face text-[2.3rem] leading-[0.95] sm:text-[2.7rem]">Log in.</h1>
+            <h1 className="display-face text-[1.8rem] leading-[0.95] sm:text-[2.1rem]">
+              Log in.
+            </h1>
           </div>
           <form className="space-y-6" onSubmit={handleSubmit}>
             <FieldLabel htmlFor="login-email" label="Email" />
@@ -60,19 +68,29 @@ export function LoginPage() {
             />
 
             {error ? (
-              <p className="rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: "#8b2b2b", color: "#ffb8b8" }}>
+              <p
+                className="rounded-2xl border px-4 py-3 text-sm"
+                style={{ borderColor: "#8b2b2b", color: "#ffb8b8" }}
+              >
                 {error}
               </p>
             ) : null}
 
-            <button className="primary-button auth-submit-button" disabled={isSubmitting} type="submit">
+            <button
+              className="primary-button auth-submit-button"
+              disabled={isSubmitting}
+              type="submit"
+            >
               {isSubmitting ? "Logging In..." : "Log In"}
             </button>
           </form>
 
-          <p className="mt-6 text-sm muted-copy">
+          <p className="mt-6 text-xs muted-copy">
             New here?{" "}
-            <Link className="font-semibold underline underline-offset-4" to="/signup">
+            <Link
+              className="font-semibold underline underline-offset-4"
+              to="/signup"
+            >
               Sign up
             </Link>
           </p>
@@ -104,7 +122,14 @@ type TextInputProps = {
   value: string;
 };
 
-function TextInput({ autoComplete, id, onChange, placeholder, type, value }: TextInputProps) {
+function TextInput({
+  autoComplete,
+  id,
+  onChange,
+  placeholder,
+  type,
+  value,
+}: TextInputProps) {
   return (
     <div className="field-shell">
       <input

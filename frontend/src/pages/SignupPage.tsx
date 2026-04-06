@@ -1,4 +1,5 @@
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../providers/AuthProvider";
@@ -32,7 +33,11 @@ export function SignupPage() {
       await signup({ full_name: fullName, email, password });
       navigate("/projects", { replace: true });
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unable to create account");
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Unable to create account",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -44,7 +49,9 @@ export function SignupPage() {
         <section className="glass-panel rounded-[2.25rem] p-6 sm:p-8 lg:p-10">
           <div className="mb-8 space-y-3">
             <p className="section-kicker">Sign up</p>
-            <h1 className="display-face text-[2.3rem] leading-[0.95] sm:text-[2.7rem]">Sign up.</h1>
+            <h1 className="display-face text-[1.8rem] leading-[0.95] sm:text-[2.1rem]">
+              Sign up.
+            </h1>
           </div>
           <form className="space-y-6" onSubmit={handleSubmit}>
             <FieldLabel htmlFor="signup-name" label="Full name" />
@@ -73,7 +80,10 @@ export function SignupPage() {
               type="password"
               value={password}
             />
-            <FieldLabel htmlFor="signup-confirm-password" label="Re-enter password" />
+            <FieldLabel
+              htmlFor="signup-confirm-password"
+              label="Re-enter password"
+            />
             <TextInput
               autoComplete="new-password"
               id="signup-confirm-password"
@@ -84,19 +94,29 @@ export function SignupPage() {
             />
 
             {error ? (
-              <p className="rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: "#8b2b2b", color: "#ffb8b8" }}>
+              <p
+                className="rounded-2xl border px-4 py-3 text-sm"
+                style={{ borderColor: "#8b2b2b", color: "#ffb8b8" }}
+              >
                 {error}
               </p>
             ) : null}
 
-            <button className="primary-button auth-submit-button" disabled={isSubmitting} type="submit">
+            <button
+              className="primary-button auth-submit-button"
+              disabled={isSubmitting}
+              type="submit"
+            >
               {isSubmitting ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 
-          <p className="mt-6 text-sm muted-copy">
+          <p className="mt-6 text-xs muted-copy">
             Already have an account?{" "}
-            <Link className="font-semibold underline underline-offset-4" to="/login">
+            <Link
+              className="font-semibold underline underline-offset-4"
+              to="/login"
+            >
               Login
             </Link>
           </p>
@@ -128,7 +148,14 @@ type TextInputProps = {
   value: string;
 };
 
-function TextInput({ autoComplete, id, onChange, placeholder, type, value }: TextInputProps) {
+function TextInput({
+  autoComplete,
+  id,
+  onChange,
+  placeholder,
+  type,
+  value,
+}: TextInputProps) {
   return (
     <div className="field-shell">
       <input

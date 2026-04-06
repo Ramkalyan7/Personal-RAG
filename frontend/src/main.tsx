@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
 import { AuthProvider } from "./providers/AuthProvider";
+import { ProjectsDataProvider } from "./providers/ProjectsDataProvider";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import "./index.css";
 
@@ -12,7 +13,9 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          <ProjectsDataProvider>
+            <App />
+          </ProjectsDataProvider>
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>

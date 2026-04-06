@@ -1,13 +1,10 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { useAuth } from "../providers/AuthProvider";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function AppHeader() {
-  const location = useLocation();
-  const { isAuthenticated, logout, user } = useAuth();
-  const authScreen =
-    location.pathname === "/login" || location.pathname === "/signup";
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <header
@@ -15,9 +12,10 @@ export function AppHeader() {
       style={{ borderColor: "var(--border)" }}
     >
       <div
-        className="flex w-full items-center justify-between px-5 py-4 sm:px-8"
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 sm:px-8"
         style={{
-          backgroundColor: "color-mix(in srgb, var(--bg) 88%, transparent)",
+          backgroundColor: "color-mix(in srgb, var(--bg) 82%, transparent)",
+          backdropFilter: "blur(14px)",
         }}
       >
         <Link
@@ -27,29 +25,12 @@ export function AppHeader() {
           Ask Vault
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
-          {isAuthenticated ? (
+          {isAuthenticated && (
             <button className="subtle-button" onClick={logout} type="button">
               Logout
             </button>
-          ) : (
-            !authScreen && (
-              <>
-                <Link
-                  className="secondary-button px-4 py-2.5 text-[0.66rem]"
-                  to="/login"
-                >
-                  Log In
-                </Link>
-                <Link
-                  className="primary-button px-4 py-2.5 text-[0.66rem]"
-                  to="/signup"
-                >
-                  Sign Up
-                </Link>
-              </>
-            )
           )}
         </div>
       </div>

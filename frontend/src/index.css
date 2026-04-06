@@ -44,6 +44,11 @@ body {
       color-mix(in srgb, var(--surface-strong) 85%, transparent) 0%,
       transparent 36%
     ),
+    radial-gradient(
+      circle at 15% 10%,
+      color-mix(in srgb, var(--surface) 70%, transparent) 0%,
+      transparent 48%
+    ),
     var(--bg);
   color: var(--text);
   font-family:
@@ -72,6 +77,135 @@ input {
   font: inherit;
 }
 
+textarea {
+  font: inherit;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.muted-copy {
+  color: var(--text-muted);
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--text) 42%, transparent);
+  outline-offset: 3px;
+}
+
+.scroll-area {
+  scrollbar-gutter: stable;
+}
+
+.scroll-area::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+.scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-input-shell {
+  background: color-mix(in srgb, var(--bg-soft) 74%, transparent);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.45);
+}
+
+.icon-button {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    filter 160ms ease;
+}
+
+.icon-button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.icon-button:active {
+  transform: translateY(0);
+}
+
+.icon-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--text) 40%, transparent);
+  outline-offset: 3px;
+}
+
+.loading-bar {
+  height: 3px;
+  width: 100%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+
+.loading-bar::before {
+  content: "";
+  display: block;
+  height: 100%;
+  width: 35%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--text) 45%, transparent),
+    transparent
+  );
+  animation: loadingSlide 900ms ease-in-out infinite;
+}
+
+@keyframes loadingSlide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.skeleton {
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--surface) 70%, transparent),
+    color-mix(in srgb, var(--surface-strong) 80%, transparent),
+    color-mix(in srgb, var(--surface) 70%, transparent)
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1200ms ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 .app-shell {
   min-height: 100vh;
   color: var(--text);
@@ -85,9 +219,18 @@ input {
       transparent 125%
     ),
     var(--bg-elevated);
-  border: 1px solid var(--border);
   box-shadow: var(--shadow);
   backdrop-filter: blur(16px);
+}
+
+.panel-inset {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface) 92%, transparent),
+      color-mix(in srgb, var(--bg-soft) 92%, transparent)
+    );
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.18);
 }
 
 .display-face {
@@ -132,6 +275,7 @@ input {
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
+    filter 160ms ease,
     opacity 160ms ease;
 }
 
@@ -156,7 +300,8 @@ input {
   transition:
     transform 160ms ease,
     border-color 160ms ease,
-    background 160ms ease;
+    background 160ms ease,
+    filter 160ms ease;
 }
 
 .primary-button:hover,
@@ -166,6 +311,19 @@ input {
 
 .primary-button:hover {
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.25);
+  filter: brightness(1.02);
+}
+
+.primary-button:active,
+.secondary-button:active {
+  transform: translateY(0);
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.subtle-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--text) 40%, transparent);
+  outline-offset: 3px;
 }
 
 .primary-button:disabled,
@@ -210,12 +368,38 @@ input {
   padding: 0.95rem 1rem;
   transition:
     border-color 160ms ease,
-    transform 160ms ease;
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .field-input:focus {
   border-color: color-mix(in srgb, var(--text) 45%, var(--border));
   transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: color-mix(in srgb, var(--bg-soft) 65%, transparent);
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.card {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface) 80%, transparent),
+      transparent 150%
+    ),
+    var(--bg-soft);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
 }
 
 .subtle-button {

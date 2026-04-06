@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.db.models import Project, User
-from app.db.schemas import ProjectCreate, ProjectRead
+from app.db.models import ConversationMessage, Project, User
+from app.db.schemas import ConversationMessageRead, ProjectCreate, ProjectRead
 from app.services.auth import get_current_user, require_authenticated_user
 
 
@@ -61,3 +61,28 @@ def get_project(
             detail="Project not found",
         )
     return project
+
+
+@router.get("/{project_id}/messages", response_model=list[ConversationMessageRead])
+def get_project_messages(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    project = (
+        db.query(Project)
+        .filter(Project.id == project_id, Project.owner_id == current_user.id)
+        .first()
+    )
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    return (
+        db.query(ConversationMessage)
+        .filter(ConversationMessage.project_id == project.id)
+        .order_by(ConversationMessage.created_at.asc(), ConversationMessage.id.asc())
+        .all()
+    )

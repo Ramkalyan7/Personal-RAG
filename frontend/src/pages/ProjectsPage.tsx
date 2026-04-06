@@ -1,105 +1,274 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { apiRequest } from "../lib/api";
-import { useAuth } from "../providers/AuthProvider";
-
-type Project = {
-  id: number;
-  name: string;
-  description: string | null;
-  owner_id: number;
-  created_at: string;
-  updated_at: string;
-};
+import { useProjectsData } from "../providers/ProjectsDataProvider";
 
 export function ProjectsPage() {
-  const { token} = useAuth();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const {
+    projects,
+    isProjectsLoading: isLoading,
+    projectsError: error,
+    loadProjects,
+    createProject,
+  } = useProjectsData();
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createName, setCreateName] = useState("");
+  const [createDescription, setCreateDescription] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const projectCountLabel = useMemo(() => {
+    return `${projects.length} project${projects.length === 1 ? "" : "s"}`;
+  }, [projects.length]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadProjects() {
-      if (!token) {
-        return;
-      }
-
-      try {
-        const data = await apiRequest<Project[]>("/projects", { token });
-        if (!cancelled) {
-          setProjects(data);
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Unable to load projects");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
     void loadProjects();
+  }, [loadProjects]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
+  useEffect(() => {
+    const state = location.state as { openCreate?: boolean } | null;
+    if (state?.openCreate) {
+      setIsCreateOpen(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.pathname, location.state, navigate]);
+
+  async function handleCreateProject(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setCreateError(null);
+    setIsCreating(true);
+
+    try {
+      const payload = {
+        name: createName.trim(),
+        description: createDescription.trim() ? createDescription.trim() : null,
+      };
+
+      const created = await createProject(payload);
+      setIsCreateOpen(false);
+      setCreateName("");
+      setCreateDescription("");
+      navigate(`/chat/${created.id}`);
+    } catch (submitError) {
+      setCreateError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Unable to create project",
+      );
+    } finally {
+      setIsCreating(false);
+    }
+  }
 
   return (
-    <main className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
-      <section className="glass-panel rounded-[2.4rem] p-6 sm:p-8 lg:p-10">
-        <div className="flex flex-col gap-5 border-b pb-8 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: "var(--border)" }}>
-          <div>
-            <p className="section-kicker">Workspace</p>
-            <h1 className="display-face mt-3 text-[2.1rem] leading-none sm:text-[2.5rem]">Projects</h1>
-          </div>
-          <div
-            className="rounded-3xl border px-5 py-4 text-[0.72rem] uppercase tracking-[0.18em]"
-            style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-soft)" }}
-          >
-            {projects.length} project{projects.length === 1 ? "" : "s"}
-          </div>
+    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8">
+      <header className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="section-kicker">Workspace</p>
+          <h1 className="display-face mt-3 text-[1.7rem] leading-none sm:text-[2.0rem]">
+            Projects
+          </h1>
+          <p className="mt-4 max-w-2xl text-xs leading-6 muted-copy">
+            Create a project and chat with your uploaded data.
+          </p>
         </div>
 
-        {isLoading ? (
-          <p className="py-10 text-sm" style={{ color: "var(--text-muted)" }}>
-            Loading projects...
-          </p>
-        ) : error ? (
-          <p className="mt-6 rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: "#8b2b2b", color: "#ffb8b8" }}>
-            {error}
-          </p>
-        ) : projects.length === 0 ? (
-          <div className="mt-8 rounded-[1.9rem] border p-7" style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-soft)" }}>
-            <p className="display-face text-[1.9rem]">No projects yet.</p>
-            <p className="mt-3 max-w-xl text-[0.95rem] leading-7 muted-copy">
-              Create your first project.
-            </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="tag">{projectCountLabel}</span>
+          <button
+            className="primary-button"
+            onClick={() => {
+              setCreateError(null);
+              setIsCreateOpen(true);
+            }}
+            type="button"
+          >
+            Create{" "}
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="inline"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      {isLoading ? (
+        <div className="mt-10 space-y-4">
+          <div className="loading-bar rounded-full" />
+          <div className="space-y-3">
+            <div className="skeleton h-5 w-[45%]" />
+            <div className="skeleton h-4 w-[70%]" />
+            <div className="skeleton h-4 w-[62%]" />
           </div>
-        ) : (
-          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        </div>
+      ) : error ? (
+        <p
+          className="mt-6 rounded-2xl px-4 py-3 text-sm"
+          style={{
+            backgroundColor: "rgba(139, 43, 43, 0.16)",
+            color: "#ffb8b8",
+          }}
+        >
+          {error}
+        </p>
+      ) : projects.length === 0 ? (
+        <div className="mt-10">
+          <p className="display-face text-[1.4rem]">No projects yet.</p>
+          <p className="mt-3 max-w-xl text-xs leading-6 muted-copy">
+            Create your first project to open the chat.
+          </p>
+        </div>
+      ) : (
+        <div
+          className="mt-10 overflow-hidden rounded-[1.4rem]"
+          style={{
+            backgroundColor:
+              "color-mix(in srgb, var(--bg-soft) 62%, transparent)",
+          }}
+        >
+          <div
+            className="grid grid-cols-[1fr_auto] gap-3 px-5 py-4 text-xs uppercase tracking-[0.18em]"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <span>Name</span>
+            <span>Action</span>
+          </div>
+          <div>
             {projects.map((project) => (
-              <article
-                className="rounded-[1.9rem] border p-6"
+              <div
+                className="grid grid-cols-[1fr_auto] items-center gap-3 px-5 py-4 transition"
                 key={project.id}
-                style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-soft)" }}
+                style={{
+                  backgroundColor: "transparent",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.backgroundColor =
+                    "color-mix(in srgb, var(--surface-strong) 55%, transparent)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.backgroundColor =
+                    "transparent";
+                }}
               >
-                <p className="text-[0.7rem] uppercase tracking-[0.22em] muted-copy">
-                  Project #{project.id}
-                </p>
-                <h2 className="display-face mt-4 text-[1.35rem] leading-tight">{project.name}</h2>
-                <p className="mt-4 text-[0.94rem] leading-7 muted-copy">
-                  {project.description || "No description."}
-                </p>
-              </article>
+                <div>
+                  <p className="font-semibold">{project.name}</p>
+                  <p className="mt-1 text-xs muted-copy">
+                    {project.description || "No description."}
+                  </p>
+                </div>
+                <Link className="secondary-button" to={`/chat/${project.id}`}>
+                  Open chat
+                </Link>
+              </div>
             ))}
           </div>
-        )}
-      </section>
+        </div>
+      )}
+
+      {isCreateOpen ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center px-5"
+          role="dialog"
+          style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+        >
+          <div
+            className="w-full max-w-xl rounded-[1.8rem] p-6 sm:p-7"
+            style={{
+              background:
+                "linear-gradient(180deg, color-mix(in srgb, var(--surface) 85%, transparent), transparent 160%), var(--bg-elevated)",
+              boxShadow: "0 40px 120px rgba(0,0,0,0.6)",
+            }}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="section-kicker">New project</p>
+                <p className="display-face mt-3 text-[1.3rem] leading-tight">
+                  Create a project.
+                </p>
+              </div>
+              <button
+                className="icon-button"
+                onClick={() => setIsCreateOpen(false)}
+                type="button"
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+
+            <form className="mt-6 space-y-5" onSubmit={handleCreateProject}>
+              <label className="field-shell">
+                <span className="field-label">Name</span>
+                <input
+                  className="field-input w-full"
+                  maxLength={255}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  placeholder="My project"
+                  required
+                  value={createName}
+                />
+              </label>
+              <label className="field-shell">
+                <span className="field-label">Description (optional)</span>
+                <input
+                  className="field-input w-full"
+                  onChange={(e) => setCreateDescription(e.target.value)}
+                  placeholder="What is this project about?"
+                  value={createDescription}
+                />
+              </label>
+
+              {createError ? (
+                <p
+                  className="rounded-2xl px-4 py-3 text-sm"
+                  style={{
+                    backgroundColor: "rgba(139, 43, 43, 0.16)",
+                    color: "#ffb8b8",
+                  }}
+                >
+                  {createError}
+                </p>
+              ) : null}
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs muted-copy">
+                  We’ll open chat right after creation.
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="secondary-button"
+                    onClick={() => setIsCreateOpen(false)}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="primary-button"
+                    disabled={isCreating}
+                    type="submit"
+                  >
+                    {isCreating ? "Creating..." : "Create"}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

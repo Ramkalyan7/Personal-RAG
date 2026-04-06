@@ -1,8 +1,9 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { AppHeader } from "./components/AppHeader";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LandingPage } from "./pages/LandingPage";
+import { ChatPage } from "./pages/ChatPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { SignupPage } from "./pages/SignupPage";
@@ -10,10 +11,12 @@ import { useAuth } from "./providers/AuthProvider";
 
 function App() {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const hideHeader = location.pathname.startsWith("/chat");
 
   return (
     <div className="app-shell">
-      <AppHeader />
+      {hideHeader ? null : <AppHeader />}
       <Routes>
         <Route path="/" element={isAuthenticated ? <Navigate replace to="/projects" /> : <LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -23,6 +26,22 @@ function App() {
           element={
             <ProtectedRoute>
               <ProjectsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat/:projectId"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
             </ProtectedRoute>
           }
         />
