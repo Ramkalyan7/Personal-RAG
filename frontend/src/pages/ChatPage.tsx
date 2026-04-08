@@ -314,15 +314,20 @@ export function ChatPage() {
 
           <div className="mt-4">
             <button
-              className="primary-button create-project-btn w-full justify-center px-4 py-2.5 text-[0.62rem]"
+              className="sidebar-create-button w-full"
               onClick={() => {
                 setCreateError(null);
                 setIsCreateOpen(true);
               }}
               type="button"
             >
-              <FolderPlus className="h-4 w-4" strokeWidth={2.2} />
-              Create
+              <span className="sidebar-create-button__icon" aria-hidden="true">
+                <FolderPlus className="h-4 w-4" strokeWidth={2.2} />
+              </span>
+              <span className="sidebar-create-button__copy">
+                <span className="sidebar-create-button__label">Create project</span>
+                <span className="sidebar-create-button__hint">Start a new chat workspace</span>
+              </span>
             </button>
           </div>
 
@@ -593,13 +598,15 @@ export function ChatPage() {
                       : "No uploaded data yet. Upload a supported file before sending a message."}
                 </span>
                 <button
-                  className="secondary-button px-4 py-2.5 text-[0.62rem]"
+                  className="upload-action-button"
                   disabled={selectedProjectId == null || isUploading}
                   onClick={() => fileInputRef.current?.click()}
                   type="button"
                 >
+                  <span className="upload-action-button__icon" aria-hidden="true">
+                    <FileUp className="h-4 w-4" strokeWidth={2} />
+                  </span>
                   {isUploading ? "Uploading..." : "Upload file"}
-                  <FileUp className="h-4 w-4" strokeWidth={2} />
                 </button>
               </div>
 

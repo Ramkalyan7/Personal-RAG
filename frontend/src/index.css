@@ -18,17 +18,17 @@
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f6f2eb;
-  --bg-elevated: #ffffff;
-  --bg-soft: #ebe6dd;
-  --surface: rgba(0, 0, 0, 0.035);
-  --surface-strong: rgba(0, 0, 0, 0.08);
-  --text: #050505;
-  --text-muted: rgba(5, 5, 5, 0.62);
-  --border: rgba(5, 5, 5, 0.1);
-  --accent: #050505;
-  --accent-contrast: #ffffff;
-  --shadow: 0 28px 75px rgba(15, 15, 15, 0.1);
+  --bg: #f4ede3;
+  --bg-elevated: #fffaf3;
+  --bg-soft: #ede2d2;
+  --surface: rgba(92, 64, 28, 0.08);
+  --surface-strong: rgba(92, 64, 28, 0.16);
+  --text: #20150c;
+  --text-muted: rgba(32, 21, 12, 0.68);
+  --border: rgba(71, 49, 24, 0.14);
+  --accent: #23180f;
+  --accent-contrast: #fffaf3;
+  --shadow: 0 30px 72px rgba(86, 58, 25, 0.14);
 }
 
 html,
@@ -123,8 +123,9 @@ textarea {
 }
 
 .chat-input-shell {
-  background: color-mix(in srgb, var(--bg-soft) 74%, transparent);
-  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.45);
+  background: color-mix(in srgb, var(--bg-soft) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.24);
 }
 
 .icon-button {
@@ -135,6 +136,7 @@ textarea {
   justify-content: center;
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
   color: var(--text);
   cursor: pointer;
   transition:
@@ -337,6 +339,25 @@ textarea {
     0 18px 40px rgba(0, 0, 0, 0.44) !important;
 }
 
+:root[data-theme="light"] .create-project-btn {
+  background:
+    linear-gradient(180deg, #3d2b1d, #23180f) !important;
+  border: 1px solid rgba(61, 43, 29, 0.42) !important;
+  color: #fff8f0 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 230, 0.22),
+    0 18px 34px rgba(86, 58, 25, 0.18) !important;
+}
+
+:root[data-theme="light"] .create-project-btn:hover {
+  background:
+    linear-gradient(180deg, #4a3423, #2b1d12) !important;
+  border-color: rgba(74, 52, 35, 0.55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 230, 0.28),
+    0 20px 40px rgba(86, 58, 25, 0.2) !important;
+}
+
 .primary-button {
   align-items: center;
   background: linear-gradient(
@@ -385,6 +406,7 @@ textarea {
     transform 160ms ease,
     border-color 160ms ease,
     background 160ms ease,
+    box-shadow 160ms ease,
     filter 160ms ease;
 }
 
@@ -460,6 +482,142 @@ textarea {
   border-color: color-mix(in srgb, var(--text) 45%, var(--border));
   transform: translateY(-1px);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.sidebar-create-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.95rem 1rem;
+  border-radius: 1.4rem;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-strong) 88%, transparent),
+      color-mix(in srgb, var(--bg-soft) 94%, transparent)
+    );
+  color: var(--text);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.sidebar-create-button:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--text) 20%, var(--border));
+  box-shadow: 0 22px 42px rgba(0, 0, 0, 0.26);
+}
+
+.sidebar-create-button:focus-visible,
+.upload-action-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--text) 40%, transparent);
+  outline-offset: 3px;
+}
+
+.sidebar-create-button__icon,
+.upload-action-button__icon {
+  width: 2.35rem;
+  height: 2.35rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-strong) 95%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+}
+
+.sidebar-create-button__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.sidebar-create-button__label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.sidebar-create-button__hint {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.upload-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg-elevated) 96%, transparent),
+      color-mix(in srgb, var(--bg-soft) 90%, transparent)
+    );
+  color: var(--text);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease,
+    filter 160ms ease;
+}
+
+.upload-action-button:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--text) 16%, var(--border));
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
+}
+
+.upload-action-button:disabled,
+.sidebar-create-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
+}
+
+:root[data-theme="light"] .secondary-button {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 243, 0.96), rgba(237, 226, 210, 0.95));
+  box-shadow: 0 12px 28px rgba(86, 58, 25, 0.1);
+}
+
+:root[data-theme="light"] .chat-input-shell {
+  box-shadow: 0 20px 54px rgba(86, 58, 25, 0.12);
+}
+
+:root[data-theme="light"] .sidebar-create-button {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 243, 0.98), rgba(237, 226, 210, 0.98));
+  box-shadow: 0 18px 36px rgba(86, 58, 25, 0.12);
+}
+
+:root[data-theme="light"] .sidebar-create-button__icon,
+:root[data-theme="light"] .upload-action-button__icon {
+  background: rgba(255, 248, 240, 0.96);
+}
+
+:root[data-theme="light"] .upload-action-button {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 243, 0.98), rgba(239, 229, 215, 0.98));
+  box-shadow: 0 14px 28px rgba(86, 58, 25, 0.12);
 }
 
 .tag {
