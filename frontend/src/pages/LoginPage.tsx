@@ -1,7 +1,9 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { LogIn } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
+import { PageFrame } from "../components/PageFrame";
 import { useAuth } from "../providers/AuthProvider";
 
 export function LoginPage() {
@@ -38,7 +40,8 @@ export function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-92px)] max-w-7xl items-center justify-center px-5 py-12 sm:px-8 lg:py-20">
+    <PageFrame>
+      <div className="flex min-h-full items-center justify-center">
       <div className="w-full max-w-xl">
         <section className="glass-panel rounded-[2.25rem] p-6 sm:p-8 lg:p-10">
           <div className="mb-8 space-y-3">
@@ -77,10 +80,11 @@ export function LoginPage() {
             ) : null}
 
             <button
-              className="primary-button auth-submit-button"
+              className="primary-button auth-submit-button gap-2"
               disabled={isSubmitting}
               type="submit"
             >
+              <LogIn className="h-4 w-4" strokeWidth={2} />
               {isSubmitting ? "Logging In..." : "Log In"}
             </button>
           </form>
@@ -96,7 +100,8 @@ export function LoginPage() {
           </p>
         </section>
       </div>
-    </main>
+      </div>
+    </PageFrame>
   );
 }
 

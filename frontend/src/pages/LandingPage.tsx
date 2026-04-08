@@ -1,9 +1,12 @@
+import { ArrowRight, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
+
+import { PageFrame } from "../components/PageFrame";
 
 export function LandingPage() {
   return (
-    <main>
-      <section className="landing-shell mx-auto flex min-h-[calc(100vh-92px)] max-w-7xl items-center px-5 py-14 sm:px-8 lg:py-20">
+    <PageFrame>
+      <section className="landing-shell flex min-h-full items-center py-2">
         <div className="w-full max-w-4xl">
           <div className="flex flex-col justify-center gap-7">
             <p className="section-kicker">Ask Vault</p>
@@ -18,15 +21,17 @@ export function LandingPage() {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Link
-                className="primary-button px-5 py-3 text-[0.68rem]"
+                className="primary-button gap-2 px-5 py-3 text-[0.68rem]"
                 to="/signup"
               >
+                <ArrowRight className="h-4 w-4" strokeWidth={2} />
                 Create Account
               </Link>
               <Link
-                className="secondary-button px-5 py-3 text-[0.68rem]"
+                className="secondary-button gap-2 px-5 py-3 text-[0.68rem]"
                 to="/login"
               >
+                <LogIn className="h-4 w-4" strokeWidth={2} />
                 Log In
               </Link>
             </div>
@@ -37,6 +42,6 @@ export function LandingPage() {
           </div>
         </div>
       </section>
-    </main>
+    </PageFrame>
   );
 }

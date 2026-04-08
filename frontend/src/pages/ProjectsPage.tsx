@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { FolderOpen, MessageSquareText, Plus, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+import { PageFrame } from "../components/PageFrame";
 import { useProjectsData } from "../providers/ProjectsDataProvider";
 
 export function ProjectsPage() {
@@ -66,7 +68,8 @@ export function ProjectsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 sm:px-8">
+    <PageFrame>
+      <div className="mx-auto max-w-6xl">
       <header className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="section-kicker">Workspace</p>
@@ -81,27 +84,15 @@ export function ProjectsPage() {
         <div className="flex flex-wrap items-center gap-3">
           <span className="tag">{projectCountLabel}</span>
           <button
-            className="primary-button create-project-btn"
+            className="primary-button create-project-btn gap-2"
             onClick={() => {
               setCreateError(null);
               setIsCreateOpen(true);
             }}
             type="button"
           >
-            Create{" "}
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="inline"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <Plus className="h-4 w-4" strokeWidth={2.2} />
+            Create
           </button>
         </div>
       </header>
@@ -127,7 +118,12 @@ export function ProjectsPage() {
         </p>
       ) : projects.length === 0 ? (
         <div className="mt-10">
-          <p className="display-face text-[1.4rem]">No projects yet.</p>
+          <div className="flex items-center gap-3">
+            <span className="logo-mark" aria-hidden="true">
+              <FolderOpen className="h-[1.05rem] w-[1.05rem]" strokeWidth={2} />
+            </span>
+            <p className="display-face text-[1.4rem]">No projects yet.</p>
+          </div>
           <p className="mt-3 max-w-xl text-xs leading-6 muted-copy">
             Create your first project to open the chat.
           </p>
@@ -170,7 +166,8 @@ export function ProjectsPage() {
                     {project.description || "No description."}
                   </p>
                 </div>
-                <Link className="secondary-button" to={`/chat/${project.id}`}>
+                <Link className="secondary-button gap-2" to={`/chat/${project.id}`}>
+                  <MessageSquareText className="h-4 w-4" strokeWidth={2} />
                   Open chat
                 </Link>
               </div>
@@ -206,7 +203,7 @@ export function ProjectsPage() {
                 onClick={() => setIsCreateOpen(false)}
                 type="button"
               >
-                <span aria-hidden="true">x</span>
+                <X aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
               </button>
             </div>
 
@@ -264,6 +261,7 @@ export function ProjectsPage() {
           </div>
         </div>
       ) : null}
-    </main>
+      </div>
+    </PageFrame>
   );
 }

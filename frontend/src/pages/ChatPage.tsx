@@ -1,4 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  FileUp,
+  FolderPlus,
+  MessageSquareDashed,
+  Plus,
+  SendHorizontal,
+  X,
+} from "lucide-react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { streamSse } from "../lib/sse";
@@ -285,10 +293,10 @@ export function ChatPage() {
   }
 
   return (
-    <main className="min-h-screen">
-      <section className="grid min-h-screen grid-cols-1 md:grid-cols-[272px_1fr]">
+    <main className="min-h-[calc(100vh-var(--app-header-height))]">
+      <section className="grid min-h-[calc(100vh-var(--app-header-height))] grid-cols-1 md:grid-cols-[272px_1fr]">
         <aside
-          className="scroll-area hidden h-screen overflow-y-auto border-r px-4 py-5 md:block"
+          className="scroll-area hidden overflow-y-auto border-r px-4 py-5 md:block"
           style={{
             borderColor: "var(--border)",
             background:
@@ -313,20 +321,8 @@ export function ChatPage() {
               }}
               type="button"
             >
-              Create{" "}
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="inline"
-              >
-                <path d="M12 5v14M5 12h14" />
-              </svg>
+              <FolderPlus className="h-4 w-4" strokeWidth={2.2} />
+              Create
             </button>
           </div>
 
@@ -346,7 +342,12 @@ export function ChatPage() {
             </p>
           ) : projects.length === 0 ? (
             <div className="card mt-6 rounded-[1.9rem] p-5">
-              <p className="text-sm muted-copy">No projects yet.</p>
+              <div className="flex items-center gap-3">
+                <span className="logo-mark" aria-hidden="true">
+                  <MessageSquareDashed className="h-[1.05rem] w-[1.05rem]" strokeWidth={2} />
+                </span>
+                <p className="text-sm muted-copy">No projects yet.</p>
+              </div>
               <Link
                 className="mt-4 inline-flex underline underline-offset-4"
                 to="/projects"
@@ -598,6 +599,7 @@ export function ChatPage() {
                   type="button"
                 >
                   {isUploading ? "Uploading..." : "Upload file"}
+                  <FileUp className="h-4 w-4" strokeWidth={2} />
                 </button>
               </div>
 
@@ -609,7 +611,7 @@ export function ChatPage() {
                   onClick={() => fileInputRef.current?.click()}
                   type="button"
                 >
-                  <span aria-hidden="true">+</span>
+                  <Plus aria-hidden="true" className="h-4 w-4" strokeWidth={2.2} />
                 </button>
 
                 <label className="sr-only" htmlFor="chat-draft">
@@ -649,7 +651,11 @@ export function ChatPage() {
                   onClick={() => void sendMessage()}
                   type="button"
                 >
-                  <span aria-hidden="true">{isStreaming ? "..." : "->"}</span>
+                  <SendHorizontal
+                    aria-hidden="true"
+                    className={`h-4 w-4 ${isStreaming ? "animate-pulse" : ""}`}
+                    strokeWidth={2}
+                  />
                 </button>
               </div>
             </div>
@@ -684,7 +690,7 @@ export function ChatPage() {
                 onClick={() => setIsCreateOpen(false)}
                 type="button"
               >
-                <span aria-hidden="true">x</span>
+                <X aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
               </button>
             </div>
 
