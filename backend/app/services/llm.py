@@ -14,8 +14,23 @@ def build_rag_prompt(*, question: str, contexts: list[str]) -> str:
     )
 
     return (
-        "Answer the user's question using only the provided context. "
-        "If the answer is not in the context, say that the uploaded project data does not contain enough information.\n\n"
+        """You are a helpful AI assistant that answers user questions using ONLY the provided context.
+
+### Instructions:
+- Carefully read the user question and the provided context.
+- Use ONLY the information from the context to answer the question.
+- If the answer is not explicitly present in the context, say:
+  "I don't have enough information to answer this question based on the provided context."
+- Do NOT use prior knowledge or make assumptions.
+- Do NOT hallucinate or fabricate details.
+- If multiple sources are provided, combine them logically and cite relevant parts.
+- Answer the question in your own words, but only based on the context. Do NOT copy verbatim unless quoting.
+
+### Answer Guidelines:
+- Be clear, concise, and accurate.
+- Prefer structured answers (bullet points or short paragraphs) when helpful.
+- If relevant, quote or reference the context.
+- Maintain a neutral and factual tone."""
         f"Question:\n{question}\n\n"
         f"Context:\n{context_block}"
     )
@@ -50,8 +65,11 @@ def stream_rag_answer(*, question: str, contexts: list[str]):
             temperature=0.2,
         ),
     )
+    
+    print("Streaming RAG answer...",stream)  # Debugging statement --- IGNORE ---
 
     for chunk in stream:
         text = getattr(chunk, "text", None)
+        print("Received chunk:", text)  # Debugging statement --- IGNORE ---
         if text:
             yield str(text)

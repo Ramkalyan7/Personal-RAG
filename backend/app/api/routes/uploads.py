@@ -127,8 +127,7 @@ async def upload_data(
         youtube_url=youtube_url,
         website_url=website_url,
     )
-
-
+    
     if not extracted_text:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -192,6 +192,7 @@ def stream_query_project(
 ):
     project = _get_owned_project(project_id=project_id, db=db, current_user=current_user)
     _ensure_project_has_uploaded_data(project.id, db)
+    
 
     dense_query_embedding = create_query_embedding(payload.question)
     if not dense_query_embedding:
@@ -201,6 +202,14 @@ def stream_query_project(
         )
 
     sparse_query_embedding = create_sparse_query_embedding(payload.question)
+    
+    if not sparse_query_embedding:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to generate sparse query embedding",
+        )
+        
+    
     retrieval_results = query_project_chunks(
         project_id=project.id,
         dense_vector=dense_query_embedding,
@@ -223,6 +232,7 @@ def stream_query_project(
             detail="No retrievable text found for this project",
         )
 
+    
     stream_id = str(uuid4())
 
     return StreamingResponse(

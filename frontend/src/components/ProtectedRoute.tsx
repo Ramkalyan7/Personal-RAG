@@ -14,8 +14,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (isInitializing) {
     return (
       <div className="flex min-h-[calc(100vh-81px)] items-center justify-center px-6">
-        <div className="glass-panel rounded-[2rem] px-8 py-6 text-sm" style={{ color: "var(--text-muted)" }}>
-          Checking session...
+        <div className="w-full max-w-xl space-y-4">
+          <div className="loading-bar rounded-full" />
+          <div className="skeleton h-5 w-[48%]" />
+          <div className="skeleton h-4 w-[72%]" />
+          <div className="skeleton h-4 w-[64%]" />
         </div>
       </div>
     );

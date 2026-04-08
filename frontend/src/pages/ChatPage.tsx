@@ -120,21 +120,6 @@ export function ChatPage() {
   }, [loadProjects]);
 
   useEffect(() => {
-    if (isProjectsLoading) return;
-    if (projectsError) return;
-    if (projects.length === 0) {
-      navigate("/projects", { replace: true, state: { openCreate: true } });
-    }
-  }, [isProjectsLoading, navigate, projects.length, projectsError]);
-
-  useEffect(() => {
-    if (isProjectsLoading) return;
-    if (selectedProjectId == null) {
-      navigate("/projects", { replace: true });
-    }
-  }, [isProjectsLoading, navigate, selectedProjectId]);
-
-  useEffect(() => {
     if (selectedProjectId != null) {
       void loadMessages(selectedProjectId);
       void loadProjectDataStatus(selectedProjectId);
@@ -271,7 +256,7 @@ export function ChatPage() {
         },
       });
 
-      await loadMessages(selectedProjectId, { force: true });
+      await loadMessages(selectedProjectId, { force: true, silent: true });
     } catch (error) {
       setSendError(
         error instanceof Error ? error.message : "Unable to send message",
@@ -385,109 +370,113 @@ export function ChatPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-var(--app-header-height))]">
-      <section className="grid min-h-[calc(100vh-var(--app-header-height))] grid-cols-1 md:grid-cols-[272px_1fr]">
+    <main className="h-[calc(100vh-var(--app-header-height))] overflow-hidden">
+      <section className="grid h-full grid-cols-1 overflow-hidden md:grid-cols-[272px_1fr]">
         <aside
-          className="scroll-area hidden overflow-y-auto border-r px-4 py-5 md:block"
+          className="hidden min-h-0 overflow-hidden border-r px-4 py-5 md:flex md:flex-col"
           style={{
             borderColor: "var(--border)",
             background:
               "linear-gradient(180deg, color-mix(in srgb, var(--surface) 65%, transparent), transparent 120%), var(--bg)",
           }}
         >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="section-kicker">Chat</p>
-              <h1 className="display-face mt-2 text-[1.2rem] leading-none">
-                Projects
-              </h1>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <button
-              className="sidebar-create-button w-full"
-              onClick={() => {
-                setCreateError(null);
-                setIsCreateOpen(true);
-              }}
-              type="button"
-            >
-              <span className="sidebar-create-button__icon" aria-hidden="true">
-                <FolderPlus className="h-4 w-4" strokeWidth={2.2} />
-              </span>
-              <span className="sidebar-create-button__copy">
-                <span className="sidebar-create-button__label">New project</span>
-              </span>
-            </button>
-          </div>
-
-          {isProjectsLoading ? (
-            <div className="mt-6 space-y-3">
-              <div className="loading-bar rounded-full" />
-              <div className="skeleton h-4 w-[70%]" />
-              <div className="skeleton h-4 w-[62%]" />
-              <div className="skeleton h-4 w-[78%]" />
-            </div>
-          ) : projectsError ? (
-            <p
-              className="mt-6 rounded-2xl border px-4 py-3 text-sm"
-              style={{ borderColor: "#8b2b2b", color: "#ffb8b8" }}
-            >
-              {projectsError}
-            </p>
-          ) : projects.length === 0 ? (
-            <div className="card mt-6 rounded-[1.9rem] p-5">
-              <div className="flex items-center gap-3">
-                <span className="logo-mark" aria-hidden="true">
-                  <MessageSquareDashed className="h-[1.05rem] w-[1.05rem]" strokeWidth={2} />
-                </span>
-                <p className="text-sm muted-copy">No projects yet.</p>
+          <div className="shrink-0">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="section-kicker">Chat</p>
+                <h1 className="display-face mt-2 text-[1.2rem] leading-none">
+                  Projects
+                </h1>
               </div>
-              <Link
-                className="mt-4 inline-flex underline underline-offset-4"
-                to="/projects"
+            </div>
+
+            <div className="mt-4">
+              <button
+                className="sidebar-create-button w-full"
+                onClick={() => {
+                  setCreateError(null);
+                  setIsCreateOpen(true);
+                }}
+                type="button"
               >
-                Create one
-              </Link>
+                <span className="sidebar-create-button__icon" aria-hidden="true">
+                  <FolderPlus className="h-4 w-4" strokeWidth={2.2} />
+                </span>
+                <span className="sidebar-create-button__copy">
+                  <span className="sidebar-create-button__label">New project</span>
+                </span>
+              </button>
             </div>
-          ) : (
-            <div className="mt-5 space-y-1.5">
-              {projects.map((project) => {
-                const isActive = selectedProjectId === project.id;
-                return (
-                  <Link
-                    className="block rounded-[1.15rem] px-3 py-2.5 transition hover:-translate-y-px hover:shadow-[0_18px_50px_rgba(0,0,0,0.25)]"
-                    key={project.id}
-                    style={{
-                      background: isActive
-                        ? "linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 92%, transparent), transparent 160%), var(--bg-soft)"
-                        : "linear-gradient(180deg, color-mix(in srgb, var(--surface) 80%, transparent), transparent 160%), var(--bg-soft)",
-                      boxShadow: isActive
-                        ? "0 18px 60px rgba(0,0,0,0.28)"
-                        : undefined,
-                    }}
-                    to={`/chat/${project.id}`}
-                  >
-                    <p className="line-clamp-1 text-[0.87rem] font-semibold leading-snug">
-                      {project.name}
-                    </p>
-                    <p
-                      className="mt-1 text-[0.66rem] line-clamp-2 leading-snug"
-                      style={{ color: "var(--text-muted)" }}
+          </div>
+
+          <div className="scroll-area mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
+            {isProjectsLoading ? (
+              <div className="space-y-3">
+                <div className="loading-bar rounded-full" />
+                <div className="skeleton h-4 w-[70%]" />
+                <div className="skeleton h-4 w-[62%]" />
+                <div className="skeleton h-4 w-[78%]" />
+              </div>
+            ) : projectsError ? (
+              <p
+                className="rounded-2xl border px-4 py-3 text-sm"
+                style={{ borderColor: "#8b2b2b", color: "#ffb8b8" }}
+              >
+                {projectsError}
+              </p>
+            ) : projects.length === 0 ? (
+              <div className="card rounded-[1.9rem] p-5">
+                <div className="flex items-center gap-3">
+                  <span className="logo-mark" aria-hidden="true">
+                    <MessageSquareDashed className="h-[1.05rem] w-[1.05rem]" strokeWidth={2} />
+                  </span>
+                  <p className="text-sm muted-copy">No projects yet.</p>
+                </div>
+                <Link
+                  className="mt-4 inline-flex underline underline-offset-4"
+                  to="/projects"
+                >
+                  Create one
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {projects.map((project) => {
+                  const isActive = selectedProjectId === project.id;
+                  return (
+                    <Link
+                      className="block rounded-[1.15rem] px-3 py-2.5 transition hover:-translate-y-px hover:shadow-[0_18px_50px_rgba(0,0,0,0.25)]"
+                      key={project.id}
+                      style={{
+                        background: isActive
+                          ? "linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 92%, transparent), transparent 160%), var(--bg-soft)"
+                          : "linear-gradient(180deg, color-mix(in srgb, var(--surface) 80%, transparent), transparent 160%), var(--bg-soft)",
+                        boxShadow: isActive
+                          ? "0 18px 60px rgba(0,0,0,0.28)"
+                          : undefined,
+                      }}
+                      to={`/chat/${project.id}`}
                     >
-                      {project.description || "No description"}
-                    </p>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+                      <p className="line-clamp-1 text-[0.87rem] font-semibold leading-snug">
+                        {project.name}
+                      </p>
+                      <p
+                        className="mt-1 text-[0.66rem] line-clamp-2 leading-snug"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {project.description || "No description"}
+                      </p>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </aside>
 
-        <section className="flex min-h-0 flex-col">
+        <section className="flex min-h-0 flex-col overflow-hidden">
           <div
-            className="scroll-area flex-1 overflow-y-auto px-6 py-6"
+            className="scroll-area flex-1 min-h-0 overflow-y-auto px-6 py-6"
             ref={transcriptRef}
             style={{
               background:
@@ -557,7 +546,7 @@ export function ChatPage() {
           </div>
 
           <div
-            className="px-6 py-5"
+            className="shrink-0 px-6 py-5"
             style={{
               background:
                 "linear-gradient(180deg, transparent, color-mix(in srgb, var(--bg) 75%, transparent) 35%, var(--bg) 100%)",

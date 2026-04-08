@@ -79,7 +79,10 @@ type ProjectsDataContextValue = {
   messagesByProjectId: Record<number, ConversationMessage[] | undefined>;
   isMessagesLoadingByProjectId: Record<number, boolean | undefined>;
   messagesErrorByProjectId: Record<number, string | null | undefined>;
-  loadMessages: (projectId: number, options?: { force?: boolean }) => Promise<ConversationMessage[]>;
+  loadMessages: (
+    projectId: number,
+    options?: { force?: boolean; silent?: boolean },
+  ) => Promise<ConversationMessage[]>;
 
   setMessages: (projectId: number, messages: ConversationMessage[]) => void;
   appendMessages: (projectId: number, messages: ConversationMessage[]) => void;
@@ -226,13 +229,15 @@ export function ProjectsDataProvider({ children }: { children: ReactNode }) {
   );
 
   const loadMessages = useCallback(
-    async (projectId: number, options?: { force?: boolean }) => {
+    async (projectId: number, options?: { force?: boolean; silent?: boolean }) => {
       if (!token) return [];
       if (messagesByProjectId[projectId] && !options?.force) {
         return messagesByProjectId[projectId] ?? [];
       }
 
-      setIsMessagesLoadingByProjectId((prev) => ({ ...prev, [projectId]: true }));
+      if (!options?.silent) {
+        setIsMessagesLoadingByProjectId((prev) => ({ ...prev, [projectId]: true }));
+      }
       setMessagesErrorByProjectId((prev) => ({ ...prev, [projectId]: null }));
       try {
         const data = await apiRequest<ConversationMessage[]>(
@@ -246,7 +251,9 @@ export function ProjectsDataProvider({ children }: { children: ReactNode }) {
         setMessagesErrorByProjectId((prev) => ({ ...prev, [projectId]: msg }));
         throw new Error(msg);
       } finally {
-        setIsMessagesLoadingByProjectId((prev) => ({ ...prev, [projectId]: false }));
+        if (!options?.silent) {
+          setIsMessagesLoadingByProjectId((prev) => ({ ...prev, [projectId]: false }));
+        }
       }
     },
     [messagesByProjectId, token],
