@@ -43,6 +43,11 @@ export type UploadProjectFileResponse = {
   stored_count: number;
 };
 
+export type UploadProjectSourcePayload =
+  | { type: "file"; file: File }
+  | { type: "youtube"; url: string }
+  | { type: "website"; url: string };
+
 export type ProjectUpload = {
   id: number;
   project_id: number;
@@ -66,9 +71,9 @@ type ProjectsDataContextValue = {
     projectId: number,
     options?: { force?: boolean },
   ) => Promise<ProjectDataStatus | null>;
-  uploadProjectFile: (
+  uploadProjectSource: (
     projectId: number,
-    file: File,
+    payload: UploadProjectSourcePayload,
   ) => Promise<UploadProjectFileResponse>;
 
   messagesByProjectId: Record<number, ConversationMessage[] | undefined>;
@@ -178,14 +183,20 @@ export function ProjectsDataProvider({ children }: { children: ReactNode }) {
     [projectDataStatusByProjectId, token],
   );
 
-  const uploadProjectFile = useCallback(
-    async (projectId: number, file: File) => {
+  const uploadProjectSource = useCallback(
+    async (projectId: number, payload: UploadProjectSourcePayload) => {
       if (!token) {
         throw new Error("Not authenticated");
       }
 
       const body = new FormData();
-      body.append("file", file);
+      if (payload.type === "file") {
+        body.append("file", payload.file);
+      } else if (payload.type === "youtube") {
+        body.append("youtube_url", payload.url);
+      } else {
+        body.append("website_url", payload.url);
+      }
 
       const uploaded = await apiRequest<UploadProjectFileResponse>(
         `/projects/${projectId}/upload-data`,
@@ -299,7 +310,7 @@ export function ProjectsDataProvider({ children }: { children: ReactNode }) {
       projectDataStatusByProjectId,
       isProjectDataStatusLoadingByProjectId,
       loadProjectDataStatus,
-      uploadProjectFile,
+      uploadProjectSource,
       messagesByProjectId,
       isMessagesLoadingByProjectId,
       messagesErrorByProjectId,
@@ -327,7 +338,7 @@ export function ProjectsDataProvider({ children }: { children: ReactNode }) {
       projects,
       projectsError,
       setMessages,
-      uploadProjectFile,
+      uploadProjectSource,
       upsertMessage,
     ],
   );

@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  FileUp,
   FolderPlus,
+  Globe,
   MessageSquareDashed,
   Plus,
   SendHorizontal,
+  Upload,
+  Video,
   X,
 } from "lucide-react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
@@ -48,7 +50,7 @@ export function ChatPage() {
     projectDataStatusByProjectId,
     isProjectDataStatusLoadingByProjectId,
     loadProjectDataStatus,
-    uploadProjectFile,
+    uploadProjectSource,
     messagesByProjectId,
     isMessagesLoadingByProjectId,
     messagesErrorByProjectId,
@@ -96,6 +98,11 @@ export function ChatPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadNotice, setUploadNotice] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadType, setUploadType] = useState<"file" | "youtube" | "website">("file");
+  const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const abortRef = useRef<AbortController | null>(null);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -136,6 +143,10 @@ export function ChatPage() {
     setUploadError(null);
     setUploadNotice(null);
     setDraft("");
+    setIsUploadModalOpen(false);
+    setSelectedUploadFile(null);
+    setYoutubeUrl("");
+    setWebsiteUrl("");
   }, [selectedProjectId]);
 
   useEffect(() => {
@@ -263,28 +274,81 @@ export function ChatPage() {
     }
   }
 
-  async function handleFileSelected(file: File | null) {
-    if (!file || selectedProjectId == null) return;
+  function resetUploadModal() {
+    setSelectedUploadFile(null);
+    setYoutubeUrl("");
+    setWebsiteUrl("");
+    setUploadType("file");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  function openUploadModal() {
+    if (selectedProjectId == null || isUploading) return;
+    setUploadError(null);
+    setUploadNotice(null);
+    setIsUploadModalOpen(true);
+  }
+
+  function closeUploadModal() {
+    setIsUploadModalOpen(false);
+    resetUploadModal();
+  }
+
+  async function handleUploadSubmit() {
+    if (selectedProjectId == null) return;
 
     setUploadError(null);
     setUploadNotice(null);
     setIsUploading(true);
 
     try {
-      const result = await uploadProjectFile(selectedProjectId, file);
+      let result;
+
+      if (uploadType === "file") {
+        if (!selectedUploadFile) {
+          throw new Error("Select one file to upload");
+        }
+        result = await uploadProjectSource(selectedProjectId, {
+          type: "file",
+          file: selectedUploadFile,
+        });
+      } else if (uploadType === "youtube") {
+        const trimmedUrl = youtubeUrl.trim();
+        if (!trimmedUrl) {
+          throw new Error("Enter a YouTube URL");
+        }
+        result = await uploadProjectSource(selectedProjectId, {
+          type: "youtube",
+          url: trimmedUrl,
+        });
+      } else {
+        const trimmedUrl = websiteUrl.trim();
+        if (!trimmedUrl) {
+          throw new Error("Enter a website URL");
+        }
+        result = await uploadProjectSource(selectedProjectId, {
+          type: "website",
+          url: trimmedUrl,
+        });
+      }
+
       await loadProjectDataStatus(selectedProjectId, { force: true });
-      setUploadNotice(
-        `${file.name} uploaded successfully. ${result.stored_count} chunks are ready to query.`,
-      );
+      const uploadLabel =
+        uploadType === "file"
+          ? selectedUploadFile?.name ?? "File"
+          : uploadType === "youtube"
+            ? youtubeUrl.trim()
+            : websiteUrl.trim();
+      setUploadNotice(`${uploadLabel} uploaded successfully. ${result.stored_count} chunks are ready to query.`);
+      closeUploadModal();
     } catch (error) {
       setUploadError(
-        error instanceof Error ? error.message : "Unable to upload file",
+        error instanceof Error ? error.message : "Unable to upload source",
       );
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     }
   }
 
@@ -325,8 +389,7 @@ export function ChatPage() {
                 <FolderPlus className="h-4 w-4" strokeWidth={2.2} />
               </span>
               <span className="sidebar-create-button__copy">
-                <span className="sidebar-create-button__label">Create project</span>
-                <span className="sidebar-create-button__hint">Start a new chat workspace</span>
+                <span className="sidebar-create-button__label">New project</span>
               </span>
             </button>
           </div>
@@ -569,10 +632,10 @@ export function ChatPage() {
                         : "Upload a document to start chatting."}
                     </h2>
                     <p className="mt-3 text-sm leading-6 muted-copy">
-                      Tip: upload PDFs, text or markdown files, CSV/JSON data,
-                      or audio files like MP3 and WAV. Once a project has at
-                      least one upload, your messages will be processed against
-                      that project data only.
+                      Tip: add one source at a time from the plus button. This
+                      project supports files, YouTube URLs, and website URLs.
+                      Once a project has at least one upload, your messages
+                      will be processed against that project data only.
                     </p>
                     <p className="mt-3 text-xs leading-6 muted-copy">
                       Accepted file types: {supportedFileTypes.join(", ")}
@@ -584,7 +647,7 @@ export function ChatPage() {
               <input
                 accept={supportedFileTypes.join(",")}
                 className="sr-only"
-                onChange={(e) => void handleFileSelected(e.target.files?.[0] ?? null)}
+                onChange={(e) => setSelectedUploadFile(e.target.files?.[0] ?? null)}
                 ref={fileInputRef}
                 type="file"
               />
@@ -595,27 +658,16 @@ export function ChatPage() {
                     ? "Checking uploaded data..."
                     : hasUploadedData
                       ? "Project has uploaded data and is ready for chat."
-                      : "No uploaded data yet. Upload a supported file before sending a message."}
+                      : "No uploaded data yet. Use the plus button to add a file, YouTube URL, or website URL."}
                 </span>
-                <button
-                  className="upload-action-button"
-                  disabled={selectedProjectId == null || isUploading}
-                  onClick={() => fileInputRef.current?.click()}
-                  type="button"
-                >
-                  <span className="upload-action-button__icon" aria-hidden="true">
-                    <FileUp className="h-4 w-4" strokeWidth={2} />
-                  </span>
-                  {isUploading ? "Uploading..." : "Upload file"}
-                </button>
               </div>
 
               <div className="chat-input-shell flex items-center gap-2 rounded-[999px] px-3 py-2">
                 <button
-                  aria-label="Upload file"
+                  aria-label="Add source"
                   className="icon-button"
                   disabled={selectedProjectId == null || isUploading}
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={openUploadModal}
                   type="button"
                 >
                   <Plus aria-hidden="true" className="h-4 w-4" strokeWidth={2.2} />
@@ -750,6 +802,126 @@ export function ChatPage() {
                   type="button"
                 >
                   {isCreating ? "Creating..." : "Create"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isUploadModalOpen ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center px-5"
+          role="dialog"
+          style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+        >
+          <div
+            className="w-full max-w-xl rounded-[1.8rem] p-6 sm:p-7"
+            style={{
+              background:
+                "linear-gradient(180deg, color-mix(in srgb, var(--surface) 85%, transparent), transparent 160%), var(--bg-elevated)",
+              boxShadow: "0 40px 120px rgba(0,0,0,0.6)",
+            }}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="section-kicker">Add source</p>
+                <p className="display-face mt-3 text-[1.3rem] leading-tight">
+                  Upload one item.
+                </p>
+                <p className="mt-2 text-sm muted-copy">
+                  Choose a file, YouTube URL, or website URL for this project.
+                </p>
+              </div>
+              <button className="icon-button" onClick={closeUploadModal} type="button">
+                <X aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
+              </button>
+            </div>
+
+            <div className="upload-type-grid mt-6">
+              <button
+                className={`upload-type-card ${uploadType === "file" ? "is-active" : ""}`}
+                onClick={() => setUploadType("file")}
+                type="button"
+              >
+                <Upload className="h-4 w-4" strokeWidth={2} />
+                <span>File</span>
+              </button>
+              <button
+                className={`upload-type-card ${uploadType === "youtube" ? "is-active" : ""}`}
+                onClick={() => setUploadType("youtube")}
+                type="button"
+              >
+                <Video className="h-4 w-4" strokeWidth={2} />
+                <span>YouTube URL</span>
+              </button>
+              <button
+                className={`upload-type-card ${uploadType === "website" ? "is-active" : ""}`}
+                onClick={() => setUploadType("website")}
+                type="button"
+              >
+                <Globe className="h-4 w-4" strokeWidth={2} />
+                <span>Website URL</span>
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-5">
+              {uploadType === "file" ? (
+                <div className="space-y-3">
+                  <label className="field-shell">
+                    <span className="field-label">File</span>
+                    <button
+                      className="upload-picker"
+                      onClick={() => fileInputRef.current?.click()}
+                      type="button"
+                    >
+                      <Upload className="h-4 w-4" strokeWidth={2} />
+                      <span>{selectedUploadFile ? selectedUploadFile.name : "Choose one file"}</span>
+                    </button>
+                  </label>
+                  <p className="text-xs muted-copy">
+                    Supported file types: {supportedFileTypes.join(", ")}
+                  </p>
+                </div>
+              ) : uploadType === "youtube" ? (
+                <label className="field-shell">
+                  <span className="field-label">YouTube URL</span>
+                  <input
+                    className="field-input w-full"
+                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    value={youtubeUrl}
+                  />
+                </label>
+              ) : (
+                <label className="field-shell">
+                  <span className="field-label">Website URL</span>
+                  <input
+                    className="field-input w-full"
+                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    placeholder="https://example.com/article"
+                    value={websiteUrl}
+                  />
+                </label>
+              )}
+
+              <div className="flex items-center justify-end gap-2">
+                <button className="secondary-button" onClick={closeUploadModal} type="button">
+                  Cancel
+                </button>
+                <button
+                  className="primary-button create-project-btn"
+                  disabled={
+                    isUploading ||
+                    (uploadType === "file" && !selectedUploadFile) ||
+                    (uploadType === "youtube" && !youtubeUrl.trim()) ||
+                    (uploadType === "website" && !websiteUrl.trim())
+                  }
+                  onClick={() => void handleUploadSubmit()}
+                  type="button"
+                >
+                  {isUploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
             </div>
