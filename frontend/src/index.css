@@ -245,6 +245,33 @@ textarea {
   letter-spacing: -0.04em;
 }
 
+.landing-shell {
+  position: relative;
+}
+
+.landing-shell::before {
+  content: "";
+  position: absolute;
+  inset: 8% auto auto 52%;
+  width: min(28rem, 42vw);
+  height: min(28rem, 42vw);
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--surface-strong) 55%, transparent) 0%,
+    transparent 68%
+  );
+  filter: blur(18px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.landing-fineprint {
+  max-width: 32rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+
 .section-kicker {
   color: var(--text-muted);
   font-size: 0.72rem;

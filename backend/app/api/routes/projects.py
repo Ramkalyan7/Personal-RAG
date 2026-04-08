@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -69,20 +70,29 @@ def get_project_messages(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    project = (
-        db.query(Project)
-        .filter(Project.id == project_id, Project.owner_id == current_user.id)
-        .first()
-    )
-    if project is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
+    try:
+        project = (
+            db.query(Project)
+            .filter(Project.id == project_id, Project.owner_id == current_user.id)
+            .first()
         )
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
+            )
 
-    return (
-        db.query(ConversationMessage)
-        .filter(ConversationMessage.project_id == project.id)
-        .order_by(ConversationMessage.created_at.asc(), ConversationMessage.id.asc())
-        .all()
-    )
+        return (
+            db.query(ConversationMessage)
+            .filter(ConversationMessage.project_id == project.id)
+            .order_by(ConversationMessage.created_at.asc(), ConversationMessage.id.asc())
+            .all()
+        )
+    except HTTPException:
+        raise
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to load project messages",
+        )

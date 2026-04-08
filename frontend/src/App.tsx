@@ -12,7 +12,9 @@ import { useAuth } from "./providers/AuthProvider";
 function App() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
-  const hideHeader = location.pathname.startsWith("/chat");
+  const hideHeader =
+    location.pathname.startsWith("/chat") ||
+    location.pathname === "/projects";
 
   return (
     <div className="app-shell">

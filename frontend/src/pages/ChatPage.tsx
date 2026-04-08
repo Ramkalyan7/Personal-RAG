@@ -326,11 +326,6 @@ export function ChatPage() {
                     ? selectedProject.name
                     : `Project #${selectedProjectId}`}
               </p>
-              {selectedProjectId != null && (
-                <span className="tag w-fit">
-                  {isStreaming ? "Streaming" : "Ready"}
-                </span>
-              )}
             </div>
           </div>
 
