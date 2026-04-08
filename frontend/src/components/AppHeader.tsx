@@ -13,7 +13,7 @@ export function AppHeader() {
       style={{ borderColor: "var(--border)" }}
     >
       <div
-        className="mx-auto flex min-h-[var(--app-header-height)] w-full max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8"
+        className="mx-auto flex min-h-(--app-header-height) w-full  px-10 items-center justify-between gap-4 py-4"
         style={{
           backgroundColor: "color-mix(in srgb, var(--bg) 82%, transparent)",
           backdropFilter: "blur(14px)",
