@@ -67,21 +67,21 @@ def create_sparse_vectors(
 
     sparse_vectors: list[dict[str, list[float] | list[int]]] = []
     for vector in response.data:
-        sparse_values = getattr(vector, "sparse_values", None)
-        if sparse_values is None and isinstance(vector, dict):
-            sparse_values = vector.get("sparse_values", {})
+        indices = getattr(vector, "sparse_indices", None)
+        values = getattr(vector, "sparse_values", None)
 
-        if sparse_values is None:
-            sparse_values = {}
+        if isinstance(vector, dict):
+            indices = vector.get("sparse_indices", indices)
+            values = vector.get("sparse_values", values)
 
-        indices = getattr(sparse_values, "indices", None)
-        values = getattr(sparse_values, "values", None)
-        
-        if indices is None and isinstance(sparse_values, dict):
-            indices = sparse_values.get("indices", [])
-            
-        if values is None and isinstance(sparse_values, dict):
-            values = sparse_values.get("values", [])
+        # Some Pinecone SDK shapes wrap sparse values in an object/dict with
+        # nested indices/values instead of top-level sparse_indices/sparse_values.
+        if isinstance(values, dict):
+            indices = values.get("indices", indices)
+            values = values.get("values", [])
+        elif values is not None and hasattr(values, "indices") and hasattr(values, "values"):
+            indices = getattr(values, "indices", indices)
+            values = getattr(values, "values", [])
 
         sparse_vectors.append(
             {
