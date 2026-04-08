@@ -115,8 +115,16 @@ def query_project(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unable to generate query embedding",
         )
+        
 
     sparse_query_embedding = create_sparse_query_embedding(payload.question)
+    
+    if not sparse_query_embedding:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to generate sparse query embedding",
+        )
+    
     retrieval_results = query_project_chunks(
         project_id=project.id,
         dense_vector=dense_query_embedding,

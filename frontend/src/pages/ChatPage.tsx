@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Files,
   FolderPlus,
   Globe,
   MessageSquareDashed,
@@ -106,11 +107,13 @@ export function ChatPage() {
   const abortRef = useRef<AbortController | null>(null);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const uploadsPanelRef = useRef<HTMLDivElement | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createDescription, setCreateDescription] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isUploadsPanelOpen, setIsUploadsPanelOpen] = useState(false);
 
   useEffect(() => {
     void loadProjects();
@@ -144,10 +147,35 @@ export function ChatPage() {
     setUploadNotice(null);
     setDraft("");
     setIsUploadModalOpen(false);
+    setIsUploadsPanelOpen(false);
     setSelectedUploadFile(null);
     setYoutubeUrl("");
     setWebsiteUrl("");
   }, [selectedProjectId]);
+
+  useEffect(() => {
+    if (!isUploadsPanelOpen) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!uploadsPanelRef.current?.contains(event.target as Node)) {
+        setIsUploadsPanelOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsUploadsPanelOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isUploadsPanelOpen]);
 
   useEffect(() => {
     return () => {
@@ -572,57 +600,6 @@ export function ChatPage() {
             ) : null}
 
             <div className="mx-auto w-full max-w-3xl">
-              {selectedProjectId != null ? (
-                <div
-                  className="mb-4 rounded-[1.4rem] border px-4 py-4"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[0.68rem] uppercase tracking-[0.18em] muted-copy">
-                        Uploaded Files
-                      </p>
-                      <p className="mt-1 text-xs muted-copy">
-                        {uploads.length > 0
-                          ? `${uploads.length} upload${uploads.length === 1 ? "" : "s"} available in this project`
-                          : "No uploads yet"}
-                      </p>
-                    </div>
-                    {uploads.length > 0 ? (
-                      <span className="tag">{uploads.length}</span>
-                    ) : null}
-                  </div>
-
-                  {uploads.length > 0 ? (
-                    <div className="mt-4 space-y-2">
-                      {uploads.map((upload) => (
-                        <div
-                          className="rounded-[1rem] px-3 py-2"
-                          key={upload.id}
-                          style={{
-                            background:
-                              "linear-gradient(180deg, color-mix(in srgb, var(--surface) 75%, transparent), transparent 170%), var(--bg-soft)",
-                          }}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="line-clamp-1 text-sm font-medium">
-                              {upload.file_name || "Untitled upload"}
-                            </p>
-                            <span className="text-[0.65rem] uppercase tracking-[0.16em] muted-copy">
-                              {upload.file_type || upload.source_type}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-4 text-sm muted-copy">
-                      Upload a supported file and it will appear here.
-                    </p>
-                  )}
-                </div>
-              ) : null}
-
               {showHero ? (
                 <div className="pb-8">
                   <div className="card rounded-[2rem] p-6 sm:p-7">
@@ -662,60 +639,128 @@ export function ChatPage() {
                 </span>
               </div>
 
-              <div className="chat-input-shell flex items-center gap-2 rounded-[999px] px-3 py-2">
-                <button
-                  aria-label="Add source"
-                  className="icon-button"
-                  disabled={selectedProjectId == null || isUploading}
-                  onClick={openUploadModal}
-                  type="button"
-                >
-                  <Plus aria-hidden="true" className="h-4 w-4" strokeWidth={2.2} />
-                </button>
+              <div className="relative" ref={uploadsPanelRef}>
+                {isUploadsPanelOpen ? (
+                  <div
+                    className="uploads-panel absolute bottom-full left-0 right-0 mb-3 rounded-[1.4rem] border p-4 shadow-[0_30px_90px_rgba(0,0,0,0.3)]"
+                    style={{
+                      borderColor: "var(--border)",
+                      background:
+                        "linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, transparent), transparent 180%), var(--bg-soft)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[0.68rem] uppercase tracking-[0.18em] muted-copy">
+                          Uploaded Files
+                        </p>
+                        <p className="mt-1 text-xs muted-copy">
+                          {uploads.length > 0
+                            ? `${uploads.length} upload${uploads.length === 1 ? "" : "s"} available in this project`
+                            : "No uploads yet"}
+                        </p>
+                      </div>
+                      {uploads.length > 0 ? (
+                        <span className="tag">{uploads.length}</span>
+                      ) : null}
+                    </div>
 
-                <label className="sr-only" htmlFor="chat-draft">
-                  Message
-                </label>
-                <input
-                  className="w-full bg-transparent px-2 py-2 text-[0.9rem] outline-none"
-                  disabled={
-                    isStreaming ||
-                    selectedProjectId == null ||
-                    !hasUploadedData ||
-                    isUploading
-                  }
-                  id="chat-draft"
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder={
-                    selectedProjectId == null
-                      ? "Select a project first"
-                      : hasUploadedData
-                        ? "Ask anything about your uploaded data"
-                        : "Upload a supported file to enable chat"
-                  }
-                  value={draft}
-                />
+                    {uploads.length > 0 ? (
+                      <div className="mt-4 max-h-56 space-y-2 overflow-y-auto pr-1">
+                        {uploads.map((upload) => (
+                          <div
+                            className="rounded-[1rem] px-3 py-2"
+                            key={upload.id}
+                            style={{
+                              background:
+                                "linear-gradient(180deg, color-mix(in srgb, var(--surface) 75%, transparent), transparent 170%), var(--bg)",
+                            }}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="line-clamp-1 text-sm font-medium">
+                                {upload.file_name || "Untitled upload"}
+                              </p>
+                              <span className="text-[0.65rem] uppercase tracking-[0.16em] muted-copy">
+                                {upload.file_type || upload.source_type}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm muted-copy">
+                        Upload a supported file and it will appear here.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
 
-                <button
-                  aria-label={
-                    isStreaming ? "Streaming response" : "Send message"
-                  }
-                  className="icon-button"
-                  disabled={
-                    isStreaming ||
-                    selectedProjectId == null ||
-                    !hasUploadedData ||
-                    !draft.trim()
-                  }
-                  onClick={() => void sendMessage()}
-                  type="button"
-                >
-                  <SendHorizontal
-                    aria-hidden="true"
-                    className={`h-4 w-4 ${isStreaming ? "animate-pulse" : ""}`}
-                    strokeWidth={2}
+                <div className="chat-input-shell flex items-center gap-2 rounded-[999px] px-3 py-2">
+                  <button
+                    aria-label="Add source"
+                    className="icon-button"
+                    disabled={selectedProjectId == null || isUploading}
+                    onClick={openUploadModal}
+                    type="button"
+                  >
+                    <Plus aria-hidden="true" className="h-4 w-4" strokeWidth={2.2} />
+                  </button>
+
+                  <button
+                    aria-expanded={isUploadsPanelOpen}
+                    aria-label="Show uploaded files"
+                    className="icon-button"
+                    disabled={selectedProjectId == null}
+                    onClick={() => setIsUploadsPanelOpen((open) => !open)}
+                    type="button"
+                  >
+                    <Files aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
+                  </button>
+
+                  <label className="sr-only" htmlFor="chat-draft">
+                    Message
+                  </label>
+                  <input
+                    className="w-full bg-transparent px-2 py-2 text-[0.9rem] outline-none"
+                    disabled={
+                      isStreaming ||
+                      selectedProjectId == null ||
+                      !hasUploadedData ||
+                      isUploading
+                    }
+                    id="chat-draft"
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder={
+                      selectedProjectId == null
+                        ? "Select a project first"
+                        : hasUploadedData
+                          ? "Ask anything about your uploaded data"
+                          : "Upload a supported file to enable chat"
+                    }
+                    value={draft}
                   />
-                </button>
+
+                  <button
+                    aria-label={
+                      isStreaming ? "Streaming response" : "Send message"
+                    }
+                    className="icon-button"
+                    disabled={
+                      isStreaming ||
+                      selectedProjectId == null ||
+                      !hasUploadedData ||
+                      !draft.trim()
+                    }
+                    onClick={() => void sendMessage()}
+                    type="button"
+                  >
+                    <SendHorizontal
+                      aria-hidden="true"
+                      className={`h-4 w-4 ${isStreaming ? "animate-pulse" : ""}`}
+                      strokeWidth={2}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

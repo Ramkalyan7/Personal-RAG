@@ -128,6 +128,7 @@ async def upload_data(
         website_url=website_url,
     )
 
+
     if not extracted_text:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -157,7 +158,6 @@ async def upload_data(
             detail="Unable to generate sparse embeddings from extracted chunks",
         )
         
-    print("Sparse embeddings generated:", sparse_embeddings)  # Debugging statement
 
     stored_count = store_project_chunks(
         project_id=project.id,
@@ -166,7 +166,6 @@ async def upload_data(
         sparse_embeddings=sparse_embeddings,
     )
     
-    print(f"Stored {stored_count} chunks in vector store for project {project.id}")  # Debugging statement
     if stored_count == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -183,7 +182,6 @@ async def upload_data(
         )
     )
     
-    print("Upload record created for project:", project.id)  # Debugging statement
     db.commit()
 
     return UploadDataResponse(
