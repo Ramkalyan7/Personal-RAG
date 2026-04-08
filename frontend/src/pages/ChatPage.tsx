@@ -12,6 +12,20 @@ type StreamEventPayload =
   | { id: string; delta?: string }
   | { id: string; message?: string };
 
+const FALLBACK_SUPPORTED_FILE_TYPES = [
+  ".pdf",
+  ".txt",
+  ".md",
+  ".csv",
+  ".json",
+  ".mp3",
+  ".wav",
+  ".m4a",
+  ".aac",
+  ".ogg",
+  ".flac",
+];
+
 export function ChatPage() {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId?: string }>();
@@ -23,6 +37,10 @@ export function ChatPage() {
     projectsError,
     loadProjects,
     createProject,
+    projectDataStatusByProjectId,
+    isProjectDataStatusLoadingByProjectId,
+    loadProjectDataStatus,
+    uploadProjectFile,
     messagesByProjectId,
     isMessagesLoadingByProjectId,
     messagesErrorByProjectId,
@@ -36,10 +54,20 @@ export function ChatPage() {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }, [projectId]);
 
-  const selectedProject = useMemo(() => {
-    if (selectedProjectId == null) return null;
-    return projects.find((project) => project.id === selectedProjectId) ?? null;
-  }, [projects, selectedProjectId]);
+  const projectDataStatus =
+    selectedProjectId != null
+      ? (projectDataStatusByProjectId[selectedProjectId] ?? null)
+      : null;
+  const isProjectDataStatusLoading =
+    selectedProjectId != null
+      ? Boolean(isProjectDataStatusLoadingByProjectId[selectedProjectId])
+      : false;
+  const hasUploadedData = Boolean(projectDataStatus?.has_uploaded_data);
+  const uploads = projectDataStatus?.uploads ?? [];
+  const supportedFileTypes =
+    projectDataStatus?.supported_file_types?.length
+      ? projectDataStatus.supported_file_types
+      : FALLBACK_SUPPORTED_FILE_TYPES;
 
   const messages =
     selectedProjectId != null
@@ -57,8 +85,12 @@ export function ChatPage() {
   const [draft, setDraft] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadNotice, setUploadNotice] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createDescription, setCreateDescription] = useState("");
@@ -81,15 +113,22 @@ export function ChatPage() {
     if (isProjectsLoading) return;
     if (selectedProjectId == null) {
       navigate("/projects", { replace: true });
-      return;
     }
-  }, [isProjectsLoading, navigate, projects, selectedProjectId]);
+  }, [isProjectsLoading, navigate, selectedProjectId]);
 
   useEffect(() => {
     if (selectedProjectId != null) {
       void loadMessages(selectedProjectId);
+      void loadProjectDataStatus(selectedProjectId);
     }
-  }, [selectedProjectId, token]);
+  }, [loadMessages, loadProjectDataStatus, selectedProjectId, token]);
+
+  useEffect(() => {
+    setSendError(null);
+    setUploadError(null);
+    setUploadNotice(null);
+    setDraft("");
+  }, [selectedProjectId]);
 
   useEffect(() => {
     return () => {
@@ -115,6 +154,13 @@ export function ChatPage() {
 
     const question = draft.trim();
     if (!question) return;
+
+    if (!hasUploadedData) {
+      setSendError(
+        "Upload at least one supported document before sending messages.",
+      );
+      return;
+    }
 
     setSendError(null);
     setDraft("");
@@ -209,16 +255,42 @@ export function ChatPage() {
     }
   }
 
+  async function handleFileSelected(file: File | null) {
+    if (!file || selectedProjectId == null) return;
+
+    setUploadError(null);
+    setUploadNotice(null);
+    setIsUploading(true);
+
+    try {
+      const result = await uploadProjectFile(selectedProjectId, file);
+      await loadProjectDataStatus(selectedProjectId, { force: true });
+      setUploadNotice(
+        `${file.name} uploaded successfully. ${result.stored_count} chunks are ready to query.`,
+      );
+    } catch (error) {
+      setUploadError(
+        error instanceof Error ? error.message : "Unable to upload file",
+      );
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
+
   if (!token) {
     return <Navigate replace to="/login" />;
   }
 
   return (
     <main className="min-h-screen">
-      <section className="grid min-h-screen grid-cols-1 md:grid-cols-[320px_1fr]">
+      <section className="grid min-h-screen grid-cols-1 md:grid-cols-[272px_1fr]">
         <aside
-          className="scroll-area hidden h-screen overflow-y-auto p-6 md:block"
+          className="scroll-area hidden h-screen overflow-y-auto border-r px-4 py-5 md:block"
           style={{
+            borderColor: "var(--border)",
             background:
               "linear-gradient(180deg, color-mix(in srgb, var(--surface) 65%, transparent), transparent 120%), var(--bg)",
           }}
@@ -226,15 +298,15 @@ export function ChatPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="section-kicker">Chat</p>
-              <h1 className="display-face mt-3 text-[1.4rem] leading-none">
+              <h1 className="display-face mt-2 text-[1.2rem] leading-none">
                 Projects
               </h1>
             </div>
           </div>
 
-          <div className="mt-5">
+          <div className="mt-4">
             <button
-              className="primary-button create-project-btn w-full justify-center"
+              className="primary-button create-project-btn w-full justify-center px-4 py-2.5 text-[0.62rem]"
               onClick={() => {
                 setCreateError(null);
                 setIsCreateOpen(true);
@@ -283,12 +355,12 @@ export function ChatPage() {
               </Link>
             </div>
           ) : (
-            <div className="mt-6 space-y-2">
+            <div className="mt-5 space-y-1.5">
               {projects.map((project) => {
                 const isActive = selectedProjectId === project.id;
                 return (
                   <Link
-                    className="block rounded-2xl px-4 py-3 transition hover:-translate-y-px hover:shadow-[0_18px_50px_rgba(0,0,0,0.25)]"
+                    className="block rounded-[1.15rem] px-3 py-2.5 transition hover:-translate-y-px hover:shadow-[0_18px_50px_rgba(0,0,0,0.25)]"
                     key={project.id}
                     style={{
                       background: isActive
@@ -300,11 +372,11 @@ export function ChatPage() {
                     }}
                     to={`/chat/${project.id}`}
                   >
-                    <p className="line-clamp-1 font-semibold leading-snug">
+                    <p className="line-clamp-1 text-[0.87rem] font-semibold leading-snug">
                       {project.name}
                     </p>
                     <p
-                      className="mt-1 text-[0.7rem] line-clamp-2 leading-snug"
+                      className="mt-1 text-[0.66rem] line-clamp-2 leading-snug"
                       style={{ color: "var(--text-muted)" }}
                     >
                       {project.description || "No description"}
@@ -317,20 +389,8 @@ export function ChatPage() {
         </aside>
 
         <section className="flex min-h-0 flex-col">
-          <div className="px-6 py-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                {selectedProjectId == null
-                  ? "Select a project to chat."
-                  : selectedProject
-                    ? selectedProject.name
-                    : `Project #${selectedProjectId}`}
-              </p>
-            </div>
-          </div>
-
           <div
-            className="scroll-area flex-1 overflow-y-auto px-6 py-2"
+            className="scroll-area flex-1 overflow-y-auto px-6 py-6"
             ref={transcriptRef}
             style={{
               background:
@@ -343,8 +403,8 @@ export function ChatPage() {
                   Pick a project to chat.
                 </p>
                 <p className="mt-3 text-xs muted-copy">
-                  Your full history is saved per project. Ask anything and watch
-                  the answer stream in.
+                  Upload documents first, then ask questions grounded in those
+                  files.
                 </p>
               </div>
             ) : isMessagesLoading ? (
@@ -389,7 +449,7 @@ export function ChatPage() {
                           {isUser ? "You" : "Assistant"}
                         </p>
                         <p className="mt-3 whitespace-pre-wrap text-[0.9rem] leading-6">
-                          {message.content || (!isUser ? "…" : "")}
+                          {message.content || (!isUser ? "..." : "")}
                         </p>
                       </div>
                     </div>
@@ -408,7 +468,7 @@ export function ChatPage() {
           >
             {sendError ? (
               <p
-                className="mb-4 rounded-2xl px-4 py-3 text-sm"
+                className="mx-auto mb-4 w-full max-w-3xl rounded-2xl px-4 py-3 text-sm"
                 style={{
                   backgroundColor: "rgba(139, 43, 43, 0.16)",
                   color: "#ffb8b8",
@@ -418,21 +478,135 @@ export function ChatPage() {
               </p>
             ) : null}
 
+            {uploadError ? (
+              <p
+                className="mx-auto mb-4 w-full max-w-3xl rounded-2xl px-4 py-3 text-sm"
+                style={{
+                  backgroundColor: "rgba(139, 43, 43, 0.16)",
+                  color: "#ffb8b8",
+                }}
+              >
+                {uploadError}
+              </p>
+            ) : null}
+
+            {uploadNotice ? (
+              <p
+                className="mx-auto mb-4 w-full max-w-3xl rounded-2xl px-4 py-3 text-sm"
+                style={{
+                  backgroundColor: "rgba(34, 197, 94, 0.12)",
+                  color: "#b7f7c3",
+                }}
+              >
+                {uploadNotice}
+              </p>
+            ) : null}
+
             <div className="mx-auto w-full max-w-3xl">
-              {showHero ? (
-                <div className="flex min-h-[42vh] flex-col items-center justify-center pb-8">
-                  <h2 className="display-face text-center text-[1.5rem] leading-tight sm:text-[1.7rem]">
-                    How can I help
-                    {selectedProject ? `, ${selectedProject.name}` : ""}?
-                  </h2>
+              {selectedProjectId != null ? (
+                <div
+                  className="mb-4 rounded-[1.4rem] border px-4 py-4"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[0.68rem] uppercase tracking-[0.18em] muted-copy">
+                        Uploaded Files
+                      </p>
+                      <p className="mt-1 text-xs muted-copy">
+                        {uploads.length > 0
+                          ? `${uploads.length} upload${uploads.length === 1 ? "" : "s"} available in this project`
+                          : "No uploads yet"}
+                      </p>
+                    </div>
+                    {uploads.length > 0 ? (
+                      <span className="tag">{uploads.length}</span>
+                    ) : null}
+                  </div>
+
+                  {uploads.length > 0 ? (
+                    <div className="mt-4 space-y-2">
+                      {uploads.map((upload) => (
+                        <div
+                          className="rounded-[1rem] px-3 py-2"
+                          key={upload.id}
+                          style={{
+                            background:
+                              "linear-gradient(180deg, color-mix(in srgb, var(--surface) 75%, transparent), transparent 170%), var(--bg-soft)",
+                          }}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="line-clamp-1 text-sm font-medium">
+                              {upload.file_name || "Untitled upload"}
+                            </p>
+                            <span className="text-[0.65rem] uppercase tracking-[0.16em] muted-copy">
+                              {upload.file_type || upload.source_type}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-sm muted-copy">
+                      Upload a supported file and it will appear here.
+                    </p>
+                  )}
                 </div>
               ) : null}
 
+              {showHero ? (
+                <div className="pb-8">
+                  <div className="card rounded-[2rem] p-6 sm:p-7">
+                    <h2 className="display-face text-[1.45rem] leading-tight sm:text-[1.7rem]">
+                      {hasUploadedData
+                        ? "Ask about your uploaded documents."
+                        : "Upload a document to start chatting."}
+                    </h2>
+                    <p className="mt-3 text-sm leading-6 muted-copy">
+                      Tip: upload PDFs, text or markdown files, CSV/JSON data,
+                      or audio files like MP3 and WAV. Once a project has at
+                      least one upload, your messages will be processed against
+                      that project data only.
+                    </p>
+                    <p className="mt-3 text-xs leading-6 muted-copy">
+                      Accepted file types: {supportedFileTypes.join(", ")}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
+              <input
+                accept={supportedFileTypes.join(",")}
+                className="sr-only"
+                onChange={(e) => void handleFileSelected(e.target.files?.[0] ?? null)}
+                ref={fileInputRef}
+                type="file"
+              />
+
+              <div className="mb-3 flex items-center justify-between gap-3 text-xs muted-copy">
+                <span>
+                  {isProjectDataStatusLoading
+                    ? "Checking uploaded data..."
+                    : hasUploadedData
+                      ? "Project has uploaded data and is ready for chat."
+                      : "No uploaded data yet. Upload a supported file before sending a message."}
+                </span>
+                <button
+                  className="secondary-button px-4 py-2.5 text-[0.62rem]"
+                  disabled={selectedProjectId == null || isUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                >
+                  {isUploading ? "Uploading..." : "Upload file"}
+                </button>
+              </div>
+
               <div className="chat-input-shell flex items-center gap-2 rounded-[999px] px-3 py-2">
                 <button
-                  aria-label="New message"
+                  aria-label="Upload file"
                   className="icon-button"
-                  disabled={selectedProjectId == null}
+                  disabled={selectedProjectId == null || isUploading}
+                  onClick={() => fileInputRef.current?.click()}
                   type="button"
                 >
                   <span aria-hidden="true">+</span>
@@ -443,13 +617,20 @@ export function ChatPage() {
                 </label>
                 <input
                   className="w-full bg-transparent px-2 py-2 text-[0.9rem] outline-none"
-                  disabled={isStreaming || selectedProjectId == null}
+                  disabled={
+                    isStreaming ||
+                    selectedProjectId == null ||
+                    !hasUploadedData ||
+                    isUploading
+                  }
                   id="chat-draft"
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder={
                     selectedProjectId == null
                       ? "Select a project first"
-                      : "Ask anything"
+                      : hasUploadedData
+                        ? "Ask anything about your uploaded data"
+                        : "Upload a supported file to enable chat"
                   }
                   value={draft}
                 />
@@ -460,12 +641,15 @@ export function ChatPage() {
                   }
                   className="icon-button"
                   disabled={
-                    isStreaming || selectedProjectId == null || !draft.trim()
+                    isStreaming ||
+                    selectedProjectId == null ||
+                    !hasUploadedData ||
+                    !draft.trim()
                   }
                   onClick={() => void sendMessage()}
                   type="button"
                 >
-                  <span aria-hidden="true">{isStreaming ? "…" : "→"}</span>
+                  <span aria-hidden="true">{isStreaming ? "..." : "->"}</span>
                 </button>
               </div>
             </div>
@@ -500,7 +684,7 @@ export function ChatPage() {
                 onClick={() => setIsCreateOpen(false)}
                 type="button"
               >
-                <span aria-hidden="true">×</span>
+                <span aria-hidden="true">x</span>
               </button>
             </div>
 
@@ -538,27 +722,22 @@ export function ChatPage() {
                 </p>
               ) : null}
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs muted-copy">
-                  We’ll open chat right after creation.
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    className="secondary-button"
-                    onClick={() => setIsCreateOpen(false)}
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="primary-button create-project-btn"
-                    disabled={isCreating || !createName.trim()}
-                    onClick={() => void handleCreateProject()}
-                    type="button"
-                  >
-                    {isCreating ? "Creating..." : "Create"}
-                  </button>
-                </div>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  className="secondary-button"
+                  onClick={() => setIsCreateOpen(false)}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  className="primary-button create-project-btn"
+                  disabled={isCreating || !createName.trim()}
+                  onClick={() => void handleCreateProject()}
+                  type="button"
+                >
+                  {isCreating ? "Creating..." : "Create"}
+                </button>
               </div>
             </div>
           </div>

@@ -206,7 +206,7 @@ export function ProjectsPage() {
                 onClick={() => setIsCreateOpen(false)}
                 type="button"
               >
-                <span aria-hidden="true">×</span>
+                <span aria-hidden="true">x</span>
               </button>
             </div>
 
@@ -244,26 +244,21 @@ export function ProjectsPage() {
                 </p>
               ) : null}
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs muted-copy">
-                  We’ll open chat right after creation.
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    className="secondary-button"
-                    onClick={() => setIsCreateOpen(false)}
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="primary-button create-project-btn"
-                    disabled={isCreating}
-                    type="submit"
-                  >
-                    {isCreating ? "Creating..." : "Create"}
-                  </button>
-                </div>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  className="secondary-button"
+                  onClick={() => setIsCreateOpen(false)}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  className="primary-button create-project-btn"
+                  disabled={isCreating}
+                  type="submit"
+                >
+                  {isCreating ? "Creating..." : "Create"}
+                </button>
               </div>
             </form>
           </div>

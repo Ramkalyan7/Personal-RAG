@@ -13,6 +13,10 @@ from app.core.config import GROQ_API_KEY, GROQ_TRANSCRIPTION_MODEL
 
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
+SUPPORTED_TEXT_FILE_SUFFIXES = (".txt", ".md", ".csv", ".json")
+SUPPORTED_AUDIO_FILE_SUFFIXES = (".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac")
+SUPPORTED_FILE_SUFFIXES = (".pdf", *SUPPORTED_TEXT_FILE_SUFFIXES, *SUPPORTED_AUDIO_FILE_SUFFIXES)
+
 
 def extract_text_from_upload(
     *,
@@ -43,13 +47,20 @@ def extract_text_from_file(*, file_name: str, file_bytes: bytes) -> str:
     if suffix == ".pdf":
         return extract_text_from_pdf(file_bytes)
 
-    if suffix in {".txt", ".md", ".csv", ".json"}:
+    if suffix in SUPPORTED_TEXT_FILE_SUFFIXES:
         return file_bytes.decode("utf-8", errors="ignore").strip()
 
-    if suffix in {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac"}:
+    if suffix in SUPPORTED_AUDIO_FILE_SUFFIXES:
         return extract_text_from_audio(file_name=file_name, file_bytes=file_bytes)
 
     return file_bytes.decode("utf-8", errors="ignore").strip()
+
+
+def is_supported_file_upload(file_name: str | None) -> bool:
+    if not file_name:
+        return False
+
+    return Path(file_name).suffix.lower() in SUPPORTED_FILE_SUFFIXES
 
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:

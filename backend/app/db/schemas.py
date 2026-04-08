@@ -50,6 +50,25 @@ class ProjectRead(ProjectBase):
     updated_at: datetime
 
 
+class ProjectUploadRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    project_id: int
+    source_type: str
+    file_name: str | None = None
+    file_type: str | None = None
+    content_type: str | None = None
+    created_at: datetime
+
+
+class ProjectDataStatus(BaseModel):
+    project_id: int
+    has_uploaded_data: bool
+    supported_file_types: list[str]
+    uploads: list[ProjectUploadRead]
+
+
 class ConversationMessageBase(BaseModel):
     role: Literal["user", "llm"]
     content: str = Field(min_length=1)

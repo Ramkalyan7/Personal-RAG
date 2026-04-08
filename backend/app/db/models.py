@@ -54,11 +54,35 @@ class Project(Base):
     )
 
     owner: Mapped["User"] = relationship("User", back_populates="projects")
+    uploads: Mapped[list["ProjectUpload"]] = relationship(
+        "ProjectUpload",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by=lambda: ProjectUpload.created_at.desc(),
+    )
     conversation_messages: Mapped[list["ConversationMessage"]] = relationship(
         "ConversationMessage",
         back_populates="project",
         cascade="all, delete-orphan",
     )
+
+
+class ProjectUpload(Base):
+    __tablename__ = "project_uploads"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), nullable=False, index=True)
+    source_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    file_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    file_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    content_type: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    project: Mapped["Project"] = relationship("Project", back_populates="uploads")
 
 
 class ConversationMessage(Base):

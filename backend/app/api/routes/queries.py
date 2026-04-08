@@ -21,6 +21,36 @@ router = APIRouter(
 )
 
 
+def _get_owned_project(*, project_id: int, db: Session, current_user: User) -> Project:
+    project = (
+        db.query(Project)
+        .filter(Project.id == project_id, Project.owner_id == current_user.id)
+        .first()
+    )
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+    return project
+
+
+def _ensure_project_has_uploaded_data(project_id: int, db: Session) -> None:
+    if (
+        db.query(Project.id)
+        .join(Project.uploads)
+        .filter(Project.id == project_id)
+        .first()
+        is not None
+    ):
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Upload at least one supported document before sending messages.",
+    )
+
+
 def _sse_message(event: str, data_obj) -> str:
     return f"event: {event}\ndata: {json.dumps(data_obj, ensure_ascii=False)}\n\n"
 
@@ -76,16 +106,8 @@ def query_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    project = (
-        db.query(Project)
-        .filter(Project.id == project_id, Project.owner_id == current_user.id)
-        .first()
-    )
-    if project is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
+    project = _get_owned_project(project_id=project_id, db=db, current_user=current_user)
+    _ensure_project_has_uploaded_data(project.id, db)
 
     dense_query_embedding = create_query_embedding(payload.question)
     if not dense_query_embedding:
@@ -160,16 +182,8 @@ def stream_query_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    project = (
-        db.query(Project)
-        .filter(Project.id == project_id, Project.owner_id == current_user.id)
-        .first()
-    )
-    if project is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
+    project = _get_owned_project(project_id=project_id, db=db, current_user=current_user)
+    _ensure_project_has_uploaded_data(project.id, db)
 
     dense_query_embedding = create_query_embedding(payload.question)
     if not dense_query_embedding:

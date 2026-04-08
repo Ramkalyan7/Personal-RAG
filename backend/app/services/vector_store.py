@@ -131,7 +131,6 @@ def query_project_chunks(
 
     return normalized_matches
 
-
 def build_project_namespace(project_id: int) -> str:
     return f"project-{project_id}"
 

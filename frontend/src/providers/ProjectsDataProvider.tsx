@@ -28,12 +28,48 @@ export type ConversationMessage = {
   created_at: string;
 };
 
+export type ProjectDataStatus = {
+  project_id: number;
+  has_uploaded_data: boolean;
+  supported_file_types: string[];
+  uploads: ProjectUpload[];
+};
+
+export type UploadProjectFileResponse = {
+  message: string;
+  chunk_count: number;
+  embedding_count: number;
+  sparse_embedding_count: number;
+  stored_count: number;
+};
+
+export type ProjectUpload = {
+  id: number;
+  project_id: number;
+  source_type: string;
+  file_name: string | null;
+  file_type: string | null;
+  content_type: string | null;
+  created_at: string;
+};
+
 type ProjectsDataContextValue = {
   projects: Project[];
   isProjectsLoading: boolean;
   projectsError: string | null;
   loadProjects: (options?: { force?: boolean }) => Promise<Project[]>;
   createProject: (payload: { name: string; description: string | null }) => Promise<Project>;
+
+  projectDataStatusByProjectId: Record<number, ProjectDataStatus | undefined>;
+  isProjectDataStatusLoadingByProjectId: Record<number, boolean | undefined>;
+  loadProjectDataStatus: (
+    projectId: number,
+    options?: { force?: boolean },
+  ) => Promise<ProjectDataStatus | null>;
+  uploadProjectFile: (
+    projectId: number,
+    file: File,
+  ) => Promise<UploadProjectFileResponse>;
 
   messagesByProjectId: Record<number, ConversationMessage[] | undefined>;
   isMessagesLoadingByProjectId: Record<number, boolean | undefined>;
@@ -66,6 +102,10 @@ export function ProjectsDataProvider({ children }: { children: ReactNode }) {
   const [messagesErrorByProjectId, setMessagesErrorByProjectId] = useState<
     Record<number, string | null | undefined>
   >({});
+  const [projectDataStatusByProjectId, setProjectDataStatusByProjectId] =
+    useState<Record<number, ProjectDataStatus | undefined>>({});
+  const [isProjectDataStatusLoadingByProjectId, setIsProjectDataStatusLoadingByProjectId] =
+    useState<Record<number, boolean | undefined>>({});
 
   const loadProjects = useCallback(
     async (options?: { force?: boolean }) => {
@@ -105,6 +145,71 @@ export function ProjectsDataProvider({ children }: { children: ReactNode }) {
       setProjects((prev) => [created, ...prev]);
       hasLoadedProjectsRef.current = true;
       return created;
+    },
+    [token],
+  );
+
+  const loadProjectDataStatus = useCallback(
+    async (projectId: number, options?: { force?: boolean }) => {
+      if (!token) return null;
+      if (projectDataStatusByProjectId[projectId] && !options?.force) {
+        return projectDataStatusByProjectId[projectId] ?? null;
+      }
+
+      setIsProjectDataStatusLoadingByProjectId((prev) => ({
+        ...prev,
+        [projectId]: true,
+      }));
+
+      try {
+        const data = await apiRequest<ProjectDataStatus>(
+          `/projects/${projectId}/data-status`,
+          { token },
+        );
+        setProjectDataStatusByProjectId((prev) => ({ ...prev, [projectId]: data }));
+        return data;
+      } finally {
+        setIsProjectDataStatusLoadingByProjectId((prev) => ({
+          ...prev,
+          [projectId]: false,
+        }));
+      }
+    },
+    [projectDataStatusByProjectId, token],
+  );
+
+  const uploadProjectFile = useCallback(
+    async (projectId: number, file: File) => {
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
+
+      const body = new FormData();
+      body.append("file", file);
+
+      const uploaded = await apiRequest<UploadProjectFileResponse>(
+        `/projects/${projectId}/upload-data`,
+        {
+          token,
+          method: "POST",
+          body,
+        },
+      );
+
+      setProjectDataStatusByProjectId((prev) => {
+        const existing = prev[projectId];
+        return {
+          ...prev,
+          [projectId]: {
+            project_id: projectId,
+            has_uploaded_data: true,
+            supported_file_types: existing?.supported_file_types ?? [],
+            uploads: existing?.uploads ?? [],
+          },
+        };
+      });
+
+      return uploaded;
     },
     [token],
   );
@@ -180,6 +285,8 @@ export function ProjectsDataProvider({ children }: { children: ReactNode }) {
     setMessagesByProjectId({});
     setIsMessagesLoadingByProjectId({});
     setMessagesErrorByProjectId({});
+    setProjectDataStatusByProjectId({});
+    setIsProjectDataStatusLoadingByProjectId({});
   }, []);
 
   const value = useMemo<ProjectsDataContextValue>(
@@ -189,6 +296,10 @@ export function ProjectsDataProvider({ children }: { children: ReactNode }) {
       projectsError,
       loadProjects,
       createProject,
+      projectDataStatusByProjectId,
+      isProjectDataStatusLoadingByProjectId,
+      loadProjectDataStatus,
+      uploadProjectFile,
       messagesByProjectId,
       isMessagesLoadingByProjectId,
       messagesErrorByProjectId,
@@ -204,15 +315,19 @@ export function ProjectsDataProvider({ children }: { children: ReactNode }) {
       appendMessages,
       clearAll,
       createProject,
+      isProjectDataStatusLoadingByProjectId,
       isMessagesLoadingByProjectId,
       isProjectsLoading,
+      loadProjectDataStatus,
       loadMessages,
       messagesByProjectId,
       messagesErrorByProjectId,
       loadProjects,
+      projectDataStatusByProjectId,
       projects,
       projectsError,
       setMessages,
+      uploadProjectFile,
       upsertMessage,
     ],
   );
@@ -227,4 +342,3 @@ export function useProjectsData() {
   }
   return ctx;
 }
-
