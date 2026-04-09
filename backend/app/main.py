@@ -16,6 +16,7 @@ Base.metadata.create_all(bind=engine)
 
 origins = [
     "http://localhost:5173",
+    "https://ask-vault-one.vercel.app"
 ]
 
 app = FastAPI()
