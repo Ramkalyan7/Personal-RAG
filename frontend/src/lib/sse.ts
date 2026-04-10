@@ -6,6 +6,12 @@ type StreamSseOptions = {
   onEvent: (event: { event: string; data: string }) => void;
 };
 
+type ApiErrorBody = {
+  detail?: string;
+  message?: string;
+  user_message?: string;
+};
+
 export async function streamSse({ url, token, body, signal, onEvent }: StreamSseOptions) {
   const response = await fetch(url, {
     method: "POST",
@@ -19,10 +25,10 @@ export async function streamSse({ url, token, body, signal, onEvent }: StreamSse
   });
 
   if (!response.ok) {
-    let message = "Request failed";
+    let message = getFallbackErrorMessage(response.status);
     try {
-      const data = (await response.json()) as { detail?: string };
-      message = data.detail ?? message;
+      const data = (await response.json()) as ApiErrorBody;
+      message = data.user_message ?? data.message ?? data.detail ?? message;
     } catch {
       // ignore
     }
@@ -80,5 +86,21 @@ export async function streamSse({ url, token, body, signal, onEvent }: StreamSse
   if (currentData) {
     flushEvent();
   }
+}
+
+function getFallbackErrorMessage(status: number) {
+  if (status === 401) {
+    return "Your session has expired. Please log in again.";
+  }
+
+  if (status === 404) {
+    return "We couldn't find what you were looking for.";
+  }
+
+  if (status >= 500) {
+    return "Something went wrong on our side. Please try again in a moment.";
+  }
+
+  return "We couldn't complete that request. Please try again.";
 }
 

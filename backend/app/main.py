@@ -1,9 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 
 from app.api.routes.auth import router as auth_router
 from app.api.routes.projects import router as projects_router
 from app.api.routes.queries import router as queries_router
 from app.api.routes.uploads import router as uploads_router
+from app.core.errors import (
+    http_exception_handler,
+    unhandled_exception_handler,
+    validation_exception_handler,
+)
 from app.db.database import engine
 from app.db.models import Base
 from app.services.auth import AuthMiddleware
@@ -20,6 +26,9 @@ origins = [
 ]
 
 app = FastAPI()
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

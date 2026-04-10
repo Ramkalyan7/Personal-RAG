@@ -595,7 +595,7 @@ export function ChatPage() {
                     <h2 className="display-face text-[1.45rem] leading-tight sm:text-[1.7rem]">
                       {hasUploadedData
                         ? "Ask about your uploaded documents."
-                        : "Upload a document to start chatting."}
+                        : "Upload data to start chatting."}
                     </h2>
                     <p className="mt-3 text-sm leading-6 muted-copy">
                       Tip: add one source at a time from the plus button. This

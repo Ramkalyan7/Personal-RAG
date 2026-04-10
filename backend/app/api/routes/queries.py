@@ -6,6 +6,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
+from app.core.errors import build_friendly_error
 from app.db.models import ConversationMessage, Project, User
 from app.db.schemas import QueryRequest, QueryResponse, RetrievedChunk
 from app.services.auth import get_current_user, require_authenticated_user
@@ -96,7 +97,14 @@ def _stream_query_events(
 
         yield _sse_message("message_done", {"id": stream_id})
     except Exception as e:
-        yield _sse_message("error", {"id": stream_id, "message": str(e) or "Unknown error"})
+        friendly_error = build_friendly_error(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
+        yield _sse_message(
+            "error",
+            {"id": stream_id, "message": friendly_error.user_message},
+        )
 
 
 @router.post("/{project_id}/query", response_model=QueryResponse)
