@@ -13,6 +13,10 @@ import {
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { streamSse } from "../lib/sse";
+import {
+  validateSingleWebsiteUrl,
+  validateSingleYoutubeUrl,
+} from "../lib/urlValidation";
 import { useAuth } from "../providers/AuthProvider";
 import {
   useProjectsData,
@@ -349,22 +353,22 @@ export function ChatPage() {
           file: selectedUploadFile,
         });
       } else if (uploadType === "youtube") {
-        const trimmedUrl = youtubeUrl.trim();
-        if (!trimmedUrl) {
-          throw new Error("Enter a YouTube URL");
+        const normalizedUrl = validateSingleYoutubeUrl(youtubeUrl);
+        if (!normalizedUrl) {
+          throw new Error("Enter one valid YouTube URL.");
         }
         result = await uploadProjectSource(selectedProjectId, {
           type: "youtube",
-          url: trimmedUrl,
+          url: normalizedUrl,
         });
       } else {
-        const trimmedUrl = websiteUrl.trim();
-        if (!trimmedUrl) {
-          throw new Error("Enter a website URL");
+        const normalizedUrl = validateSingleWebsiteUrl(websiteUrl);
+        if (!normalizedUrl) {
+          throw new Error("Enter one valid website URL.");
         }
         result = await uploadProjectSource(selectedProjectId, {
           type: "website",
-          url: trimmedUrl,
+          url: normalizedUrl,
         });
       }
 

@@ -12,6 +12,10 @@ from app.services.content_extraction import (
     extract_text_from_upload,
     is_supported_file_upload,
 )
+from app.services.url_validation import (
+    validate_single_website_url,
+    validate_single_youtube_url,
+)
 from app.services.vector_store import store_project_chunks
 
 
@@ -109,6 +113,20 @@ async def upload_data(
     current_user: User = Depends(get_current_user),
 ):
     project = _get_owned_project(project_id=project_id, db=db, current_user=current_user)
+    normalized_youtube_url = validate_single_youtube_url(youtube_url)
+    normalized_website_url = validate_single_website_url(website_url)
+
+    if youtube_url and not normalized_youtube_url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Enter one valid YouTube URL.",
+        )
+
+    if website_url and not normalized_website_url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Enter one valid website URL.",
+        )
 
     if file is not None and not is_supported_file_upload(file.filename):
         raise HTTPException(
@@ -124,8 +142,8 @@ async def upload_data(
         raw_text=raw_text,
         file_name=file.filename if file is not None else None,
         file_bytes=file_bytes,
-        youtube_url=youtube_url,
-        website_url=website_url,
+        youtube_url=normalized_youtube_url,
+        website_url=normalized_website_url,
     )
     
     if not extracted_text:
@@ -176,8 +194,8 @@ async def upload_data(
             project_id=project.id,
             file=file,
             raw_text=raw_text,
-            youtube_url=youtube_url,
-            website_url=website_url,
+            youtube_url=normalized_youtube_url,
+            website_url=normalized_website_url,
         )
     )
     

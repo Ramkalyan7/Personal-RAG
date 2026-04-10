@@ -57,6 +57,14 @@ def build_friendly_error(*, status_code: int, detail: Any = None) -> FriendlyErr
             code="messages_unavailable",
             user_message="We couldn't load this conversation right now. Please try again.",
         ),
+        "Enter one valid YouTube URL.": FriendlyError(
+            code="invalid_youtube_url",
+            user_message="Enter one valid YouTube URL.",
+        ),
+        "Enter one valid website URL.": FriendlyError(
+            code="invalid_website_url",
+            user_message="Enter one valid website URL.",
+        ),
         "Upload at least one supported document before sending messages.": FriendlyError(
             code="project_has_no_uploads",
             user_message="Upload at least one document before starting the chat.",
