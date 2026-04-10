@@ -342,13 +342,12 @@ export function ChatPage() {
     setIsUploading(true);
 
     try {
-      let result;
 
       if (uploadType === "file") {
         if (!selectedUploadFile) {
           throw new Error("Select one file to upload");
         }
-        result = await uploadProjectSource(selectedProjectId, {
+        await uploadProjectSource(selectedProjectId, {
           type: "file",
           file: selectedUploadFile,
         });
@@ -357,7 +356,7 @@ export function ChatPage() {
         if (!normalizedUrl) {
           throw new Error("Enter one valid YouTube URL.");
         }
-        result = await uploadProjectSource(selectedProjectId, {
+        await uploadProjectSource(selectedProjectId, {
           type: "youtube",
           url: normalizedUrl,
         });
@@ -366,7 +365,7 @@ export function ChatPage() {
         if (!normalizedUrl) {
           throw new Error("Enter one valid website URL.");
         }
-        result = await uploadProjectSource(selectedProjectId, {
+        await uploadProjectSource(selectedProjectId, {
           type: "website",
           url: normalizedUrl,
         });
@@ -379,7 +378,7 @@ export function ChatPage() {
           : uploadType === "youtube"
             ? youtubeUrl.trim()
             : websiteUrl.trim();
-      setUploadNotice(`${uploadLabel} uploaded successfully. ${result.stored_count} chunks are ready to query.`);
+      setUploadNotice(`${uploadLabel} uploaded successfully.`);
       closeUploadModal();
     } catch (error) {
       setUploadError(
