@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from urllib.parse import urlparse
 
 
@@ -27,6 +28,10 @@ def _validate_single_url(*, value: str | None, require_youtube: bool) -> str | N
     parsed = urlparse(candidate)
 
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return None
+
+    remainder = candidate[len(f"{parsed.scheme}://") :]
+    if re.search(r"https?:/{1,2}", remainder, flags=re.IGNORECASE):
         return None
 
     if require_youtube and parsed.hostname not in {

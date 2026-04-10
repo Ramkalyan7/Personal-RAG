@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from requests import RequestException
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -138,13 +139,19 @@ async def upload_data(
         )
 
     file_bytes = await file.read() if file is not None else None
-    extracted_text = extract_text_from_upload(
-        raw_text=raw_text,
-        file_name=file.filename if file is not None else None,
-        file_bytes=file_bytes,
-        youtube_url=normalized_youtube_url,
-        website_url=normalized_website_url,
-    )
+    try:
+        extracted_text = extract_text_from_upload(
+            raw_text=raw_text,
+            file_name=file.filename if file is not None else None,
+            file_bytes=file_bytes,
+            youtube_url=normalized_youtube_url,
+            website_url=normalized_website_url,
+        )
+    except RequestException:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="We couldn't open that website URL. Check the link and try again.",
+        )
     
     if not extracted_text:
         raise HTTPException(

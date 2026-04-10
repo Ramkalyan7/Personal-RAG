@@ -65,6 +65,10 @@ def build_friendly_error(*, status_code: int, detail: Any = None) -> FriendlyErr
             code="invalid_website_url",
             user_message="Enter one valid website URL.",
         ),
+        "We couldn't open that website URL. Check the link and try again.": FriendlyError(
+            code="website_unreachable",
+            user_message="We couldn't open that website URL. Check the link and try again.",
+        ),
         "Upload at least one supported document before sending messages.": FriendlyError(
             code="project_has_no_uploads",
             user_message="Upload at least one document before starting the chat.",
