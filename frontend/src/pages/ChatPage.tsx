@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   Files,
   FolderPlus,
@@ -84,6 +84,8 @@ export function ChatPage() {
     selectedProjectId != null
       ? (messagesByProjectId[selectedProjectId] ?? [])
       : [];
+  const latestMessageContent =
+    messages.length > 0 ? messages[messages.length - 1]?.content ?? "" : "";
   const messagesError =
     selectedProjectId != null
       ? (messagesErrorByProjectId[selectedProjectId] ?? null)
@@ -173,7 +175,7 @@ export function ChatPage() {
       top: transcriptRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [messages.length]);
+  }, [latestMessageContent, messages.length]);
 
   const showHero =
     selectedProjectId != null &&
@@ -251,7 +253,6 @@ export function ChatPage() {
               (payload as { message?: string } | null)?.message ??
               "Streaming failed";
             setSendError(message);
-            abortController.abort();
           }
         },
       });
@@ -264,6 +265,26 @@ export function ChatPage() {
     } finally {
       setIsStreaming(false);
     }
+  }
+
+  function handleDraftKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (
+      isStreaming ||
+      selectedProjectId == null ||
+      !hasUploadedData ||
+      isUploading ||
+      !draft.trim()
+    ) {
+      return;
+    }
+
+    void sendMessage();
   }
 
   async function handleCreateProject() {
@@ -534,9 +555,21 @@ export function ChatPage() {
                         >
                           {isUser ? "You" : "Assistant"}
                         </p>
-                        <p className="mt-3 whitespace-pre-wrap text-[0.9rem] leading-6">
-                          {message.content || (!isUser ? "..." : "")}
-                        </p>
+                        {message.content ? (
+                          <p className="mt-3 whitespace-pre-wrap text-[0.9rem] leading-6">
+                            {message.content}
+                          </p>
+                        ) : isUser ? null : (
+                          <div
+                            aria-label="Assistant is typing"
+                            className="mt-3 inline-flex items-center gap-1.5"
+                            role="status"
+                          >
+                            <span className="h-2 w-2 animate-bounce rounded-full bg-[var(--text-muted)] [animation-delay:-0.3s]" />
+                            <span className="h-2 w-2 animate-bounce rounded-full bg-[var(--text-muted)] [animation-delay:-0.15s]" />
+                            <span className="h-2 w-2 animate-bounce rounded-full bg-[var(--text-muted)]" />
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -709,8 +742,8 @@ export function ChatPage() {
                   <label className="sr-only" htmlFor="chat-draft">
                     Message
                   </label>
-                  <input
-                    className="w-full bg-transparent px-2 py-2 text-[0.9rem] outline-none"
+                  <textarea
+                    className="max-h-40 min-h-[2.5rem] w-full resize-none bg-transparent px-2 py-2 text-[0.9rem] outline-none"
                     disabled={
                       isStreaming ||
                       selectedProjectId == null ||
@@ -718,14 +751,16 @@ export function ChatPage() {
                       isUploading
                     }
                     id="chat-draft"
+                    onKeyDown={handleDraftKeyDown}
                     onChange={(e) => setDraft(e.target.value)}
                     placeholder={
                       selectedProjectId == null
                         ? "Select a project first"
                         : hasUploadedData
                           ? "Ask anything about your uploaded data"
-                          : "Upload a supported file to enable chat"
+                        : "Upload a supported file to enable chat"
                     }
+                    rows={1}
                     value={draft}
                   />
 

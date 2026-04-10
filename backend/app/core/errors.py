@@ -30,6 +30,7 @@ def _stringify_detail(detail: Any) -> str:
 
 def build_friendly_error(*, status_code: int, detail: Any = None) -> FriendlyError:
     normalized_detail = _stringify_detail(detail)
+    normalized_detail_lower = normalized_detail.lower()
 
     detail_mappings = {
         "Email is already registered": FriendlyError(
@@ -106,6 +107,17 @@ def build_friendly_error(*, status_code: int, detail: Any = None) -> FriendlyErr
         return FriendlyError(
             code="unsupported_file_type",
             user_message="That file type isn't supported yet. Please choose one of the supported file types shown.",
+        )
+
+    if (
+        "rate limit" in normalized_detail_lower
+        or "too many requests" in normalized_detail_lower
+        or "quota" in normalized_detail_lower
+        or "resource has been exhausted" in normalized_detail_lower
+    ):
+        return FriendlyError(
+            code="llm_rate_limited",
+            user_message="The assistant is busy right now. Please wait a moment and try again.",
         )
 
     if normalized_detail in detail_mappings:
